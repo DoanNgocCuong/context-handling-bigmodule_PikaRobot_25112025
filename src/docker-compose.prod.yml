@@ -1,0 +1,29 @@
+# Project name riêng cho API service
+name: context-handling-service
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: context_handling_api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      LOGGING_LEVEL: INFO
+      ENVIRONMENT: production
+      HOST: 0.0.0.0
+    ports:
+      - "${PORT-30020}:30020"
+    networks:
+      - context_handling_network
+
+networks:
+  context_handling_network:             # tên mạng bạn tạo
+    driver: bridge              # kiểu mạng: bridge (mặc định của Docker)
+    ipam:                       # IP Address Management - quản lý dải IP
+      driver: default
+      config:
+        - subnet: 10.3.0.0/24 # dải mạng (CIDR) dùng cho network này
+          gateway: 10.3.0.1   # địa chỉ gateway (cổng mặc định) của network

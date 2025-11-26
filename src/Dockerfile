@@ -27,12 +27,12 @@ COPY . .
 RUN mkdir -p /app/logs
 
 # Expose port
-EXPOSE 8000
+EXPOSE 30020
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/v1/health')"
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:30020/v1/health')"
 
 # Run application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uvicorn", "app.main_app:app", "--host", "0.0.0.0", "--port", "30020", "--reload"]
 
