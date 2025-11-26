@@ -5,7 +5,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Dict, Any
 from app.api.dependency_injection import get_friendship_score_calculation_service
 from app.services.friendship_score_calculation_service import FriendshipScoreCalculationService
-from app.schemas.conversation_schemas import FriendshipScoreCalculationResponse
+from app.schemas.conversation_schemas import (
+    FriendshipScoreCalculationResponse,
+    FriendshipScoreCalculationAPIResponse
+)
 from app.core.exceptions_custom import ConversationNotFoundError, InvalidScoreError, InvalidUserIdError
 from app.core.status_codes import StatusCode
 from app.utils.logger_setup import get_logger
@@ -18,12 +21,12 @@ router = APIRouter()
 
 @router.post(
     "/friendship/calculate-score/{conversation_id}",
-    response_model=Dict[str, Any]
+    response_model=FriendshipScoreCalculationAPIResponse
 )
 async def calculate_friendship_score_from_conversation_id(
     conversation_id: str,
     service: FriendshipScoreCalculationService = Depends(get_friendship_score_calculation_service)
-) -> Dict[str, Any]:
+) -> FriendshipScoreCalculationAPIResponse:
     """
     Calculate friendship score from conversation_id.
     
@@ -73,11 +76,11 @@ async def calculate_friendship_score_from_conversation_id(
         result = service.calculate_score_from_conversation_id(validated_id)
         
         # Format response
-        response_data = {
-            "success": True,
-            "data": result,
-            "message": "Friendship score calculated successfully"
-        }
+        response_data = FriendshipScoreCalculationAPIResponse(
+            success=True,
+            data=result,
+            message="Friendship score calculated successfully"
+        )
         
         logger.info(
             f"Score calculation completed for conversation_id: {validated_id}, "

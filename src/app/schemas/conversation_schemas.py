@@ -166,3 +166,35 @@ class FriendshipScoreCalculationResponse(BaseModel):
             }
         }
 
+
+class FriendshipScoreCalculationAPIResponse(BaseModel):
+    """API response schema for friendship score calculation endpoint."""
+    success: bool = Field(True, description="Operation success status")
+    data: FriendshipScoreCalculationResponse = Field(..., description="Calculation result data")
+    message: str = Field(..., description="Response message")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "success": True,
+                "data": {
+                    "friendship_score_change": 29,
+                    "conversation_id": "conv_id_2003doanngoccuong",
+                    "user_id": "user_123",
+                    "calculation_details": {
+                        "total_turns": 6,
+                        "user_initiated_questions": 2,
+                        "session_emotion": "interesting",
+                        "new_memories_count": 1,
+                        "base_score": 3,
+                        "engagement_bonus": 6,
+                        "emotion_bonus": 15,
+                        "memory_bonus": 5,
+                        "total_score_before_clamp": 29,
+                        "final_score_change": 29
+                    }
+                },
+                "message": "Friendship score calculated successfully"
+            }
+        }
+

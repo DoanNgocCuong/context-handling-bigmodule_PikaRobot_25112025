@@ -2,10 +2,13 @@
 Dependency injection setup for FastAPI.
 """
 from functools import lru_cache
+from fastapi import Depends
 from sqlalchemy.orm import Session
 from app.db.database_connection import SessionLocal
 from app.services.friendship_score_calculation_service import FriendshipScoreCalculationService
 from app.services.conversation_data_fetch_service import ConversationDataFetchService
+from app.services.friendship_status_store_service import FriendshipStatusStoreService
+from app.services.friendship_status_update_service import FriendshipStatusUpdateService
 from app.utils.logger_setup import get_logger
 
 logger = get_logger(__name__)
@@ -70,5 +73,24 @@ def get_friendship_score_calculation_service():
     return FriendshipScoreCalculationService(
         conversation_fetch_service=conversation_fetch_service
     )
+
+
+@lru_cache()
+def get_friendship_status_store_service():
+    """
+    Get friendship status store service instance.
+    
+    This is an in-memory store used for demo purposes.
+    """
+    return FriendshipStatusStoreService()
+
+
+def get_friendship_status_update_service(
+    db: Session = Depends(get_db),
+) -> FriendshipStatusUpdateService:
+    """
+    Get friendship status update service (database-backed).
+    """
+    return FriendshipStatusUpdateService(db)
 
 
