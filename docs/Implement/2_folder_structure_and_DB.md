@@ -5,95 +5,160 @@
 ```
 context-handling-service/
 │
-├── README.md
-├── .env.example
-├── requirements.txt
-├── Dockerfile
-├── docker-compose.yml
-├── pyproject.toml
+├── README.md                                    # Tài liệu chính của project
+├── .env.example                                 # Template environment variables
+├── .gitignore                                   # Git ignore file
+├── requirements.txt                             # Python dependencies
+├── pyproject.toml                               # Project configuration
+├── Dockerfile                                   # Docker image definition
+├── docker-compose.yml                           # Docker compose for local dev
 │
-├── app/
+├── app/                                         # Main application package
 │   ├── __init__.py
 │   │
-│   ├── core/                          # Cấu hình, constants, exceptions
+│   ├── core/                                    # Core configuration & constants
 │   │   ├── __init__.py
-│   │   ├── config.py                  # Settings, environment variables
-│   │   ├── constants.py               # Constants, enums
-│   │   └── exceptions.py              # Custom exceptions
+│   │   ├── config_settings.py                   # ✅ Settings & environment variables
+│   │   ├── constants_enums.py                   # ✅ Constants & enums (FriendshipLevel, AgentType, etc.)
+│   │   ├── exceptions_custom.py                 # ✅ Custom exceptions (FriendshipNotFoundError, etc.)
+│   │   └── status_codes.py                      # ✅ HTTP status codes & error messages
 │   │
-│   ├── models/                        # Database models (SQLAlchemy)
+│   ├── models/                                  # SQLAlchemy ORM models
 │   │   ├── __init__.py
-│   │   ├── base.py                    # Base model class
-│   │   ├── friendship.py              # FriendshipStatus model
-│   │   └── agent.py                   # FriendshipAgentMapping model
+│   │   ├── base_model.py                        # ✅ Base model class with common fields
+│   │   ├── friendship_status_model.py           # ✅ FriendshipStatus table model
+│   │   ├── friendship_agent_mapping_model.py    # ✅ FriendshipAgentMapping table model
+│   │   └── conversation_model.py                # ✅ Conversation table model (if needed)
 │   │
-│   ├── schemas/                       # Pydantic schemas (request/response)
+│   ├── schemas/                                 # Pydantic request/response schemas
 │   │   ├── __init__.py
-│   │   ├── friendship.py              # Friendship schemas
-│   │   ├── agent.py                   # Agent schemas
-│   │   └── common.py                  # Common schemas
+│   │   ├── friendship_status_schemas.py         # ✅ FriendshipStatus request/response
+│   │   ├── friendship_agent_mapping_schemas.py  # ✅ AgentMapping request/response
+│   │   ├── activity_suggestion_schemas.py       # ✅ Activity suggestion request/response
+│   │   ├── conversation_end_schemas.py          # ✅ Conversation end event schema
+│   │   └── common_schemas.py                    # ✅ Common schemas (error responses, etc.)
 │   │
-│   ├── db/                            # Database layer
+│   ├── db/                                      # Database layer
 │   │   ├── __init__.py
-│   │   ├── database.py                # Database connection, session
-│   │   └── base_repository.py         # Base repository class
+│   │   ├── database_connection.py               # ✅ Database connection & SessionLocal
+│   │   ├── base_repository.py                   # ✅ Base repository class (generic CRUD)
+│   │   └── database_migrations.py               # ✅ Migration utilities
 │   │
-│   ├── repositories/                  # Data access layer (Repository pattern)
+│   ├── repositories/                            # Data access layer (Repository pattern)
 │   │   ├── __init__.py
-│   │   ├── friendship_repository.py   # Friendship data access
-│   │   └── agent_repository.py        # Agent mapping data access
+│   │   ├── friendship_status_repository.py      # ✅ FriendshipStatus CRUD operations
+│   │   ├── friendship_agent_mapping_repository.py # ✅ AgentMapping CRUD operations
+│   │   └── conversation_repository.py           # ✅ Conversation lookup operations
 │   │
-│   ├── services/                      # Business logic layer
+│   ├── services/                                # Business logic layer
 │   │   ├── __init__.py
-│   │   ├── friendship_service.py      # Friendship logic
-│   │   └── selection_service.py       # Agent selection logic
+│   │   ├── friendship_score_calculation_service.py  # ✅ Calculate friendship score change
+│   │   ├── friendship_status_update_service.py      # ✅ Update friendship status in DB
+│   │   ├── topic_metrics_update_service.py          # ✅ Update topic metrics
+│   │   ├── agent_selection_algorithm_service.py     # ✅ Select agents (greeting, talk, game)
+│   │   ├── activity_suggestion_service.py           # ✅ Suggest activities for user
+│   │   └── conversation_data_fetch_service.py       # ✅ Fetch conversation data by ID
 │   │
-│   ├── api/                           # API routes
+│   ├── tasks/                                   # Background tasks & async jobs
 │   │   ├── __init__.py
-│   │   ├── deps.py                    # Dependency injection
-│   │   └── v1/
+│   │   ├── process_conversation_end_task.py     # ✅ Background task: process conversation end
+│   │   ├── batch_recompute_candidates_task.py   # ✅ Scheduled task: batch recompute (6h)
+│   │   └── retry_failed_processing_task.py      # ✅ Retry mechanism for failed tasks
+│   │
+│   ├── cache/                                   # Caching layer
+│   │   ├── __init__.py
+│   │   ├── redis_cache_manager.py               # ✅ Redis cache operations
+│   │   ├── cache_keys_builder.py                # ✅ Build cache keys (candidates:{user_id})
+│   │   └── cache_invalidation_handler.py        # ✅ Invalidate cache when needed
+│   │
+│   ├── api/                                     # API routes & endpoints
+│   │   ├── __init__.py
+│   │   ├── dependency_injection.py              # ✅ Dependency injection setup
+│   │   │
+│   │   └── v1/                                  # API v1
 │   │       ├── __init__.py
-│   │       ├── endpoints/
-│   │       │   ├── __init__.py
-│   │       │   ├── friendship.py      # Friendship endpoints
-│   │       │   ├── agents.py          # Agent endpoints
-│   │       │   └── health.py          # Health check
-│   │       └── router.py              # API router
+│   │       ├── router_v1_main.py                # ✅ Main router for v1
+│   │       │
+│   │       └── endpoints/
+│   │           ├── __init__.py
+│   │           ├── endpoint_conversations_end.py        # ✅ POST /conversations/end
+│   │           ├── endpoint_conversations_get.py        # ✅ GET /conversations/{id}
+│   │           ├── endpoint_friendship_status.py        # ✅ POST /friendship/status
+│   │           ├── endpoint_friendship_update.py        # ✅ POST /friendship/update
+│   │           ├── endpoint_activities_suggest.py       # ✅ POST /activities/suggest
+│   │           ├── endpoint_agent_mappings_list.py      # ✅ GET /agent-mappings
+│   │           ├── endpoint_agent_mappings_create.py    # ✅ POST /agent-mappings
+│   │           ├── endpoint_agent_mappings_update.py    # ✅ PUT /agent-mappings/{id}
+│   │           ├── endpoint_agent_mappings_delete.py    # ✅ DELETE /agent-mappings/{id}
+│   │           └── endpoint_health_check.py             # ✅ GET /health
 │   │
-│   ├── utils/                         # Utility functions
+│   ├── utils/                                   # Utility functions & helpers
 │   │   ├── __init__.py
-│   │   ├── logger.py                  # Logging setup
-│   │   ├── validators.py              # Input validators
-│   │   └── helpers.py                 # Helper functions
+│   │   ├── logger_setup.py                      # ✅ Logging configuration & setup
+│   │   ├── input_validators.py                  # ✅ Input validation functions
+│   │   ├── helper_functions.py                  # ✅ General helper functions
+│   │   ├── weighted_random_selection.py         # ✅ Weighted random selection algorithm
+│   │   └── datetime_utilities.py                # ✅ DateTime utilities
 │   │
-│   └── main.py                        # FastAPI app entry point
+│   └── main_app.py                              # ✅ FastAPI app entry point
 │
-├── migrations/                        # Alembic migrations
-│   ├── env.py
-│   ├── script.py.mako
+├── migrations/                                  # Alembic database migrations
+│   ├── env.py                                   # ✅ Alembic environment config
+│   ├── script.py.mako                           # ✅ Migration template
+│   │
 │   └── versions/
-│       ├── 001_create_friendship_status_table.py
-│       └── 002_create_friendship_agent_mapping_table.py
-│
-├── scripts/                           # Utility scripts
-│   ├── __init__.py
-│   ├── seed_agents.py                 # Seed agent data
-│   └── init_db.py                     # Initialize database
-│
-├── tests/                             # Tests
-│   ├── __init__.py
-│   ├── conftest.py                    # Pytest configuration
-│   ├── unit/
-│   │   ├── __init__.py
-│   │   ├── test_friendship_service.py
-│   │   └── test_selection_service.py
-│   └── integration/
 │       ├── __init__.py
-│       ├── test_friendship_api.py
-│       └── test_agent_api.py
+│       ├── 001_create_friendship_status_table.py        # ✅ Migration: Create friendship_status
+│       ├── 002_create_friendship_agent_mapping_table.py # ✅ Migration: Create agent_mapping
+│       └── 003_add_indexes_and_constraints.py           # ✅ Migration: Add indexes
 │
-└── logs/
-    └── .gitkeep
+├── scripts/                                     # Utility scripts
+│   ├── __init__.py
+│   ├── script_seed_agent_data.py                # ✅ Seed initial agent data
+│   ├── script_initialize_database.py            # ✅ Initialize database (create tables, seed)
+│   ├── script_reset_database.py                 # ✅ Reset database (drop all tables)
+│   └── script_generate_sample_data.py           # ✅ Generate sample data for testing
+│
+├── tests/                                       # Test suite
+│   ├── __init__.py
+│   ├── conftest_pytest_config.py                # ✅ Pytest configuration & fixtures
+│   │
+│   ├── unit/                                    # Unit tests
+│   │   ├── __init__.py
+│   │   ├── test_friendship_score_calculation.py # ✅ Test score calculation algorithm
+│   │   ├── test_topic_metrics_update.py         # ✅ Test topic metrics update
+│   │   ├── test_agent_selection_algorithm.py    # ✅ Test agent selection algorithm
+│   │   ├── test_friendship_status_repository.py # ✅ Test repository methods
+│   │   └── test_input_validators.py             # ✅ Test input validation
+│   │
+│   ├── integration/                             # Integration tests
+│   │   ├── __init__.py
+│   │   ├── test_api_conversations_end.py        # ✅ Test POST /conversations/end
+│   │   ├── test_api_friendship_status.py        # ✅ Test POST /friendship/status
+│   │   ├── test_api_activities_suggest.py       # ✅ Test POST /activities/suggest
+│   │   ├── test_api_agent_mappings_crud.py      # ✅ Test agent mappings CRUD
+│   │   └── test_end_to_end_flow.py              # ✅ Test complete flow
+│   │
+│   └── fixtures/                                # Test fixtures & sample data
+│       ├── __init__.py
+│       ├── fixture_friendship_data.py           # ✅ Friendship test data
+│       ├── fixture_agent_data.py                # ✅ Agent test data
+│       └── fixture_conversation_data.py         # ✅ Conversation test data
+│
+├── logs/                                        # Application logs
+│   └── .gitkeep
+│
+├── docs/                                        # Documentation
+│   ├── API_SPECIFICATION.md                     # ✅ API specification
+│   ├── DATABASE_SCHEMA.md                       # ✅ Database schema documentation
+│   ├── ARCHITECTURE.md                          # ✅ Architecture documentation
+│   ├── SETUP_GUIDE.md                           # ✅ Setup & installation guide
+│   └── DEPLOYMENT_GUIDE.md                      # ✅ Deployment guide
+│
+└── config/                                      # Configuration files
+    ├── logging_config.yaml                      # ✅ Logging configuration
+    ├── database_config.yaml                     # ✅ Database configuration
+    └── cache_config.yaml                        # ✅ Cache configuration
 ```
 
 ### 8.2. Giải thích Chi tiết

@@ -1,0 +1,23 @@
+{
+  "python.defaultInterpreterPath": "d:\\GIT\\context-handling-bigmodule_PikaRobot_25112025\\.locust_env\\Scripts\\python",
+  "github.copilot.chat.mcpServers": {
+    "mcp-locust": {
+      "command": "d:\\GIT\\context-handling-bigmodule_PikaRobot_25112025\\.locust_env\\Scripts\\python",
+      "args": [
+        "-u",
+        "c:\\Users\\User\\.kiro\\extensions\\locust.locust-vscode-extension-0.1.61-universal\\mcp\\server.py"
+      ],
+      "cwd": "${workspaceFolder}"
+    }
+  },
+  "github.copilot.experimental.mcpServers": {
+    "mcp-locust": {
+      "command": "d:\\GIT\\context-handling-bigmodule_PikaRobot_25112025\\.locust_env\\Scripts\\python",
+      "args": [
+        "-u",
+        "c:\\Users\\User\\.kiro\\extensions\\locust.locust-vscode-extension-0.1.61-universal\\mcp\\server.py"
+      ],
+      "cwd": "${workspaceFolder}"
+    }
+  }
+}
