@@ -76,7 +76,7 @@ class ConversationResponse(BaseModel):
     conversation_id: str = Field(..., description="Unique conversation identifier")
     user_id: str = Field(..., description="User identifier")
     agent_id: str = Field(..., description="Agent identifier used in conversation")
-    agent_type: Literal["GREETING", "TALK", "GAME_ACTIVITY"] = Field(
+    agent_type: str = Field(
         ...,
         description="Type of agent"
     )

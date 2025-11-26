@@ -4,12 +4,11 @@ Schemas for conversation event operations.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import AliasChoices, BaseModel, Field, model_validator
 
 from app.core.constants_enums import AgentType, ConversationEventStatus
-from app.schemas.conversation_schemas import ConversationLogItem
 
 
 class ConversationEventCreateRequest(BaseModel):
@@ -22,7 +21,11 @@ class ConversationEventCreateRequest(BaseModel):
     bot_name: str = Field(..., max_length=255, description="Human readable bot name")
     start_time: datetime = Field(..., description="Conversation start timestamp")
     end_time: datetime = Field(..., description="Conversation end timestamp")
-    conversation_log: List[ConversationLogItem] = Field(default_factory=list, description="Ordered conversation turns")
+    conversation_log: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Raw JSON conversation payload; stored as-is",
+        validation_alias=AliasChoices("conversation_log", "conversation_logs"),
+    )
     status: ConversationEventStatus = Field(default=ConversationEventStatus.PENDING, description="Initial processing status")
     attempt_count: int = Field(default=0, ge=0, description="Number of processing attempts")
     next_attempt_at: Optional[datetime] = Field(default=None, description="Next scheduled processing time")
@@ -74,7 +77,7 @@ class ConversationEventData(BaseModel):
     start_time: datetime
     end_time: datetime
     duration_seconds: int
-    conversation_log: List[ConversationLogItem]
+    conversation_log: List[Dict[str, Any]]
     status: ConversationEventStatus
     attempt_count: int
     created_at: datetime
