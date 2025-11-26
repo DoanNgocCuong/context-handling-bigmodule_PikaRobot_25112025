@@ -24,3 +24,4 @@ class FriendshipAgentMapping(Base):
         UniqueConstraint("friendship_level", "agent_type", "agent_id", name="uq_level_type_agent"),
     )
 
+

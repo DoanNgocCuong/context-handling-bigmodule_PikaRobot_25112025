@@ -55,3 +55,67 @@ curl -X POST "http://localhost:8000/v1/activities/suggest" \
     "user_id": "user_doanngoccuong"
   }'
 ```
+
+4. Trigger conversation_events:
+```
+curl -X 'POST' \
+  'http://localhost:30022/v1/conversations/end' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "bot_id": "talk_movie_preference",
+  "bot_name": "Movie Preference Talk",
+  "bot_type": "TALK",
+  "conversation_id": "conv_20251126_001",
+  "conversation_log": [
+    {
+      "speaker": "pika",
+      "text": "Hello! Ready to talk about movies?",
+      "timestamp": "2025-11-26T10:00:00Z",
+      "turn_id": 1
+    }
+  ],
+  "end_time": "2025-11-26T10:20:00Z",
+  "start_time": "2025-11-26T10:00:00Z",
+  "status": "PENDING",
+  "user_id": "user_doanngoccuong"
+}'
+```
+
+
+```
+{
+  "success": true,
+  "message": "Conversation event accepted for processing",
+  "data": {
+    "id": 1,
+    "conversation_id": "conv_20251126_001",
+    "user_id": "user_doanngoccuong",
+    "bot_type": "TALK",
+    "bot_id": "talk_movie_preference",
+    "bot_name": "Movie Preference Talk",
+    "start_time": "2025-11-26T10:00:00",
+    "end_time": "2025-11-26T10:20:00",
+    "duration_seconds": 1200,
+    "conversation_log": [
+      {
+        "speaker": "pika",
+        "turn_id": 1,
+        "text": "Hello! Ready to talk about movies?",
+        "timestamp": "2025-11-26T10:00:00Z"
+      }
+    ],
+    "status": "PENDING",
+    "attempt_count": 0,
+    "created_at": "2025-11-26T10:34:25.329741",
+    "next_attempt_at": "2025-11-26T16:34:28.039026",
+    "processed_at": null,
+    "error_code": null,
+    "error_details": null,
+    "friendship_score_change": null,
+    "new_friendship_level": null,
+    "updated_at": "2025-11-26T10:34:25.329741"
+  }
+}
+
+```

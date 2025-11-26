@@ -49,3 +49,4 @@ class CandidatesCacheManager:
         key = self._build_key(user_id)
         self.redis.delete(key)
 
+

@@ -18,6 +18,15 @@ class AgentType(str, Enum):
     GAME_ACTIVITY = "GAME_ACTIVITY"
 
 
+class ConversationEventStatus(str, Enum):
+    """Status values for conversation_events processing."""
+    PENDING = "PENDING"
+    PROCESSING = "PROCESSING"
+    PROCESSED = "PROCESSED"
+    FAILED = "FAILED"
+    SKIPPED = "SKIPPED"
+
+
 # Score thresholds for friendship levels
 FRIENDSHIP_SCORE_THRESHOLDS = {
     FriendshipLevel.STRANGER: (0, 500),
@@ -38,6 +47,9 @@ CACHE_TTL_DEFAULT = 3600  # 1 hour
 # Cache key prefixes
 CACHE_KEY_PREFIX_CANDIDATES = "candidates"
 CACHE_KEY_PREFIX_FRIENDSHIP = "friendship"
+
+# Conversation event processing defaults
+CONVERSATION_EVENT_RETRY_HOURS = 6
 
 
 

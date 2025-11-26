@@ -38,6 +38,16 @@ class ConversationNotFoundError(AppException):
     pass
 
 
+class ConversationEventAlreadyExistsError(AppException):
+    """Raised when a conversation event already exists."""
+    pass
+
+
+class ConversationEventValidationError(AppException):
+    """Raised when conversation event payload is invalid."""
+    pass
+
+
 class DatabaseConnectionError(AppException):
     """Raised when database connection fails."""
     pass

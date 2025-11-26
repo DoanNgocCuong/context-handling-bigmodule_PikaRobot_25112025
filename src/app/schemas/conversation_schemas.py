@@ -11,7 +11,10 @@ class ConversationLogItem(BaseModel):
     speaker: Literal["pika", "user"] = Field(..., description="Speaker: pika or user")
     turn_id: int = Field(..., description="Turn number in conversation", ge=1)
     text: str = Field(..., description="Message content", min_length=1)
-    timestamp: datetime = Field(..., description="Message timestamp (ISO 8601)")
+    timestamp: Optional[datetime] = Field(
+        None,
+        description="Message timestamp (ISO 8601). Optional for ingestion payloads.",
+    )
 
     class Config:
         json_schema_extra = {

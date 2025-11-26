@@ -1,2 +1,4 @@
 
 .locust_env/
+
+__pycache__/

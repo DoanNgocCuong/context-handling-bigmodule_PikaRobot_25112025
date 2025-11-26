@@ -87,3 +87,68 @@ CREATE TABLE agent_prompting (
 
 CREATE INDEX idx_agent_prompting_agent_id
 ON agent_prompting(agent_id);
+
+
+
+--- conversation_events table
+CREATE TABLE conversation_events (
+    -- Primary Key
+    id SERIAL PRIMARY KEY,
+    
+    -- Identifiers
+    conversation_id VARCHAR(255) NOT NULL UNIQUE,
+    user_id VARCHAR(255) NOT NULL,
+    
+    -- Bot Information
+    bot_type VARCHAR(50) NOT NULL 
+        CHECK (bot_type IN ('GREETING', 'TALK', 'GAME_ACTIVITY')),
+    bot_id VARCHAR(255) NOT NULL,
+    bot_name VARCHAR(255) NOT NULL,
+    
+    -- Conversation Timing
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP NOT NULL,
+    duration_seconds INTEGER GENERATED ALWAYS AS (
+        EXTRACT(EPOCH FROM (end_time - start_time))::INTEGER
+    ) STORED,
+    
+    -- Conversation Data
+    conversation_log JSONB NOT NULL DEFAULT '[]',
+    
+    -- Status tracking
+    status VARCHAR(50) NOT NULL DEFAULT 'PENDING'
+        CHECK (status IN ('PENDING', 'PROCESSING', 'PROCESSED', 'FAILED', 'SKIPPED')),
+    attempt_count INTEGER NOT NULL DEFAULT 0,
+    
+    -- Timing for processing
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    next_attempt_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP + INTERVAL '6 hours',
+    processed_at TIMESTAMP,
+    
+    -- Error tracking (only when FAILED)
+    error_code VARCHAR(50),
+    error_details TEXT,
+    
+    -- Processing results
+    friendship_score_change FLOAT,
+    new_friendship_level VARCHAR(50),
+    
+    -- Timestamps
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes for efficient querying
+CREATE INDEX idx_conversation_events_status ON conversation_events(status);
+CREATE INDEX idx_conversation_events_next_attempt ON conversation_events(next_attempt_at);
+CREATE INDEX idx_conversation_events_user_id ON conversation_events(user_id);
+CREATE INDEX idx_conversation_events_created_at ON conversation_events(created_at);
+CREATE INDEX idx_conversation_events_bot_type ON conversation_events(bot_type);
+CREATE INDEX idx_conversation_events_bot_id ON conversation_events(bot_id);
+
+-- Composite index for common queries
+CREATE INDEX idx_conversation_events_status_next_attempt 
+    ON conversation_events(status, next_attempt_at);
+
+-- GIN index for JSONB queries
+CREATE INDEX idx_conversation_events_log_gin 
+    ON conversation_events USING GIN (conversation_log);

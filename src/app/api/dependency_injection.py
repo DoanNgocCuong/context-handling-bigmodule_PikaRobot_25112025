@@ -10,6 +10,7 @@ from app.services.conversation_data_fetch_service import ConversationDataFetchSe
 from app.services.friendship_status_store_service import FriendshipStatusStoreService
 from app.services.friendship_status_update_service import FriendshipStatusUpdateService
 from app.services.activity_suggestion_service import ActivitySuggestionService
+from app.services.conversation_event_service import ConversationEventService
 from app.utils.logger_setup import get_logger
 
 logger = get_logger(__name__)
@@ -102,5 +103,14 @@ def get_activity_suggestion_service(
     Get activity suggestion service (uses selection logic and caching).
     """
     return ActivitySuggestionService(db)
+
+
+def get_conversation_event_service(
+    db: Session = Depends(get_db),
+) -> ConversationEventService:
+    """
+    Get conversation event service.
+    """
+    return ConversationEventService(db)
 
 

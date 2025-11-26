@@ -21,6 +21,8 @@ ERROR_MESSAGES: Dict[str, str] = {
     "INVALID_USER_ID": "Invalid user_id format",
     "FRIENDSHIP_NOT_FOUND": "Friendship status not found",
     "CONVERSATION_NOT_FOUND": "Conversation not found",
+    "CONVERSATION_EVENT_EXISTS": "Conversation event already exists",
+    "CONVERSATION_EVENT_INVALID": "Conversation event payload invalid",
     "AGENT_NOT_FOUND": "Agent not found",
     "INVALID_SCORE": "Invalid score value",
     "DATABASE_ERROR": "Database connection error",
@@ -37,6 +39,8 @@ class StatusCode:
     INVALID_USER_ID = "INVALID_USER_ID"
     FRIENDSHIP_NOT_FOUND = "FRIENDSHIP_NOT_FOUND"
     CONVERSATION_NOT_FOUND = "CONVERSATION_NOT_FOUND"
+    CONVERSATION_EVENT_EXISTS = "CONVERSATION_EVENT_EXISTS"
+    CONVERSATION_EVENT_INVALID = "CONVERSATION_EVENT_INVALID"
     AGENT_NOT_FOUND = "AGENT_NOT_FOUND"
     INVALID_SCORE = "INVALID_SCORE"
     DATABASE_ERROR = "DATABASE_ERROR"

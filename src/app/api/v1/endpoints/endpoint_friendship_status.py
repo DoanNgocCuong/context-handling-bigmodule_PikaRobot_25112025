@@ -24,53 +24,6 @@ class FriendshipScoreUpdateRequest(BaseModel):
     conversation_id: str = Field(..., description="Conversation ID to compute score from")
 
 
-@router.post("/friendship_status/calculate-score/{conversation_id}")
-async def calculate_score_friendship_status_route(
-    conversation_id: str,
-    service: FriendshipScoreCalculationService = Depends(get_friendship_score_calculation_service)
-) -> Dict[str, Any]:
-    """
-    Calculate friendship score from conversation_id (friendship_status namespace).
-    
-    This is similar to /friendship/calculate-score but exposed under /friendship_status/.
-    """
-    try:
-        result = service.calculate_score_from_conversation_id(conversation_id)
-        return {
-            "success": True,
-            "data": result,
-            "message": "Friendship score calculated successfully"
-        }
-    except ConversationNotFoundError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={
-                "success": False,
-                "error": "CONVERSATION_NOT_FOUND",
-                "message": str(e)
-            }
-        )
-    except InvalidScoreError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "success": False,
-                "error": "INVALID_SCORE_CALCULATION",
-                "message": str(e)
-            }
-        )
-    except Exception as e:
-        logger.error(f"Unexpected error calculating score (friendship_status route): {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "success": False,
-                "error": "INTERNAL_SERVER_ERROR",
-                "message": "An unexpected error occurred"
-            }
-        )
-
-
 @router.post("/friendship_status/calculate-score-and-update")
 async def calculate_and_update_friendship_status_route(
     request: FriendshipScoreUpdateRequest,

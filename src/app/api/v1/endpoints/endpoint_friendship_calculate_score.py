@@ -19,7 +19,7 @@ router = APIRouter()
 
 
 @router.post(
-    "/friendship/calculate-score/{conversation_id}",
+    "/friendship_status/calculate-score/{conversation_id}",
     response_model=FriendshipScoreCalculationAPIResponse
 )
 async def calculate_friendship_score_from_conversation_id(

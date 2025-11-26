@@ -29,3 +29,4 @@ class ActivitySuggestionService:
         self.cache_manager.set(user_id, suggestions, ttl=DEFAULT_TTL_SECONDS)
         return suggestions
 
+

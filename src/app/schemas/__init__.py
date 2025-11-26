@@ -8,3 +8,7 @@ from app.schemas.conversation_schemas import (  # noqa: F401
     FriendshipScoreCalculationAPIResponse,
 )
 from app.schemas.activity_suggestion_schemas import ActivitySuggestionResponse  # noqa: F401
+from app.schemas.conversation_event_schemas import (  # noqa: F401
+    ConversationEventCreateRequest,
+    ConversationEventCreateResponse,
+)
