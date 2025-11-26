@@ -1,6 +1,6 @@
-"\"\"
+"""
 Repository for friendship_status table.
-\"\"\"
+"""
 from typing import Optional
 from sqlalchemy.orm import Session
 from datetime import datetime
@@ -10,14 +10,14 @@ from app.core.exceptions_custom import FriendshipNotFoundError
 
 
 class FriendshipStatusRepository:
-    \"\"\"Data access layer for friendship_status.\"\"\"
+    """Data access layer for friendship_status."""
 
     def __init__(self, db: Session):
         self.db = db
         self.model = FriendshipStatus
 
     def get_by_user_id(self, user_id: str) -> Optional[FriendshipStatus]:
-        \"\"\"Fetch friendship status by user_id.\"\"\"
+        """Fetch friendship status by user_id."""
         return (
             self.db.query(self.model)
             .filter(self.model.user_id == user_id)
@@ -25,7 +25,7 @@ class FriendshipStatusRepository:
         )
 
     def create_default(self, user_id: str) -> FriendshipStatus:
-        \"\"\"Create default friendship status for new user.\"\"\"
+        """Create default friendship status for new user."""
         status = self.model(
             user_id=user_id,
             friendship_score=0.0,
@@ -45,7 +45,7 @@ class FriendshipStatusRepository:
         score_change: float,
         last_interaction_date: Optional[datetime] = None,
     ) -> FriendshipStatus:
-        \"\"\"Apply score change to user and update friendship level.\"\"\"
+        """Apply score change to user and update friendship level."""
         status = self.get_by_user_id(user_id)
         if not status:
             status = self.create_default(user_id)
@@ -58,7 +58,7 @@ class FriendshipStatusRepository:
         return status
 
     def _determine_level(self, score: float) -> FriendshipLevel:
-        \"\"\"Determine friendship level from score thresholds.\"\"\"
+        """Determine friendship level from score thresholds."""
         if score >= FRIENDSHIP_SCORE_THRESHOLDS[FriendshipLevel.FRIEND][0]:
             return FriendshipLevel.FRIEND
         if score >= FRIENDSHIP_SCORE_THRESHOLDS[FriendshipLevel.ACQUAINTANCE][0]:

@@ -10,8 +10,7 @@ from app.api.dependency_injection import (
 )
 from app.services.friendship_score_calculation_service import FriendshipScoreCalculationService
 from app.services.friendship_status_update_service import FriendshipStatusUpdateService
-from app.core.exceptions_custom import InvalidUserIdError, ConversationNotFoundError, InvalidScoreError
-from app.utils.input_validators import validate_conversation_id
+from app.core.exceptions_custom import ConversationNotFoundError, InvalidScoreError
 from app.utils.logger_setup import get_logger
 
 logger = get_logger(__name__)
@@ -36,22 +35,12 @@ async def calculate_score_friendship_status_route(
     This is similar to /friendship/calculate-score but exposed under /friendship_status/.
     """
     try:
-        validated_id = validate_conversation_id(conversation_id)
-        result = service.calculate_score_from_conversation_id(validated_id)
+        result = service.calculate_score_from_conversation_id(conversation_id)
         return {
             "success": True,
             "data": result,
             "message": "Friendship score calculated successfully"
         }
-    except InvalidUserIdError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "success": False,
-                "error": "INVALID_CONVERSATION_ID_FORMAT",
-                "message": str(e)
-            }
-        )
     except ConversationNotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -92,9 +81,8 @@ async def calculate_and_update_friendship_status_route(
     Calculate score from conversation_id and immediately update friendship status for the user.
     """
     try:
-        validated_conversation_id = validate_conversation_id(request.conversation_id)
         # Step 1: Calculate score change from conversation
-        result = score_service.calculate_score_from_conversation_id(validated_conversation_id)
+        result = score_service.calculate_score_from_conversation_id(request.conversation_id)
         score_change = result.get("friendship_score_change", 0.0)
         
         # Step 2: Apply score change to user (in-memory store for demo)
@@ -110,15 +98,6 @@ async def calculate_and_update_friendship_status_route(
         }
         return response
     
-    except InvalidUserIdError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "success": False,
-                "error": "INVALID_CONVERSATION_ID_FORMAT",
-                "message": str(e)
-            }
-        )
     except ConversationNotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

@@ -2,7 +2,7 @@
 Pydantic Schemas for Conversation Data.
 """
 from pydantic import BaseModel, Field
-from typing import List, Optional, Literal
+from typing import List, Optional, Literal, Dict, Any
 from datetime import datetime
 
 
@@ -195,6 +195,61 @@ class FriendshipScoreCalculationAPIResponse(BaseModel):
                     }
                 },
                 "message": "Friendship score calculated successfully"
+            }
+        }
+
+
+class FriendshipStatusData(BaseModel):
+    """Serialized friendship status data."""
+    user_id: str = Field(..., description="User ID")
+    friendship_score: float = Field(..., description="Current friendship score")
+    friendship_level: str = Field(..., description="Friendship level")
+    last_interaction_date: Optional[str] = Field(None, description="Last interaction timestamp (ISO 8601)")
+    streak_day: int = Field(..., description="Current streak day count")
+    topic_metrics: Dict[str, Any] = Field(default_factory=dict, description="Topic metrics JSON")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "user_id": "user_doanngoccuong",
+                "friendship_score": 29,
+                "friendship_level": "STRANGER",
+                "last_interaction_date": "2025-11-25T18:30:00Z",
+                "streak_day": 0,
+                "topic_metrics": {}
+            }
+        }
+
+
+class FriendshipStatusUpdateData(BaseModel):
+    """Data payload for calculate-score-and-update response."""
+    calculation_result: FriendshipScoreCalculationResponse = Field(..., description="Score calculation result")
+    updated_status: FriendshipStatusData = Field(..., description="Updated friendship status")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "calculation_result": FriendshipScoreCalculationAPIResponse.Config.json_schema_extra["example"]["data"],
+                "updated_status": FriendshipStatusData.Config.json_schema_extra["example"]
+            }
+        }
+
+
+class FriendshipStatusUpdateAPIResponse(BaseModel):
+    """API response schema for calculate-score-and-update endpoint."""
+    success: bool = Field(True, description="Operation success status")
+    data: FriendshipStatusUpdateData = Field(..., description="Result payload")
+    message: str = Field(..., description="Response message")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "success": True,
+                "data": {
+                    "calculation_result": FriendshipScoreCalculationAPIResponse.Config.json_schema_extra["example"]["data"],
+                    "updated_status": FriendshipStatusData.Config.json_schema_extra["example"]
+                },
+                "message": "Friendship score calculated and status updated successfully"
             }
         }
 

@@ -9,10 +9,9 @@ from app.schemas.conversation_schemas import (
     FriendshipScoreCalculationResponse,
     FriendshipScoreCalculationAPIResponse
 )
-from app.core.exceptions_custom import ConversationNotFoundError, InvalidScoreError, InvalidUserIdError
+from app.core.exceptions_custom import ConversationNotFoundError, InvalidScoreError
 from app.core.status_codes import StatusCode
 from app.utils.logger_setup import get_logger
-from app.utils.input_validators import validate_conversation_id
 
 logger = get_logger(__name__)
 
@@ -67,13 +66,10 @@ async def calculate_friendship_score_from_conversation_id(
         500: Internal server error
     """
     try:
-        # Validate conversation_id format
-        validated_id = validate_conversation_id(conversation_id)
-        
-        logger.info(f"API: Calculating friendship score for conversation_id: {validated_id}")
+        logger.info(f"API: Calculating friendship score for conversation_id: {conversation_id}")
         
         # Calculate score
-        result = service.calculate_score_from_conversation_id(validated_id)
+        result = service.calculate_score_from_conversation_id(conversation_id)
         
         # Format response
         response_data = FriendshipScoreCalculationAPIResponse(
@@ -83,23 +79,12 @@ async def calculate_friendship_score_from_conversation_id(
         )
         
         logger.info(
-            f"Score calculation completed for conversation_id: {validated_id}, "
+            f"Score calculation completed for conversation_id: {conversation_id}, "
             f"score_change: {result.get('friendship_score_change', 0)}"
         )
         
         return response_data
         
-    except InvalidUserIdError as e:
-        logger.warning(f"Invalid conversation_id format: {conversation_id}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "success": False,
-                "error": "INVALID_CONVERSATION_ID_FORMAT",
-                "message": str(e)
-            }
-        )
-    
     except ConversationNotFoundError as e:
         logger.warning(f"Conversation not found: {conversation_id}")
         raise HTTPException(
