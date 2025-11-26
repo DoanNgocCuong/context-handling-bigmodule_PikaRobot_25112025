@@ -83,7 +83,7 @@ class ConversationResponse(BaseModel):
     conversation_log: List[ConversationLogItem] = Field(
         ...,
         description="List of conversation turns",
-        min_items=1
+        min_items=0
     )
     metadata: ConversationMetadata = Field(..., description="Conversation metadata")
 

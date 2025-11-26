@@ -16,7 +16,7 @@ Tài liệu này đặc tả chi tiết về mặt kỹ thuật cho việc xây 
 
 ### 1.2. Thay đổi so với Thiết kế ban đầu
 
-Dựa trên yêu cầu mới, luồng cập nhật điểm tình bạn (`friendship_score`) sẽ được thay đổi từ mô hình xử lý hàng loạt cuối ngày (batch processing) sang **mô hình xử lý theo thời gian thực (real-time processing)**. 
+Dựa trên yêu cầu mới, luồng cập nhật điểm tình bạn (`friendship_score`) sẽ được thay đổi từ mô hình xử lý hàng loạt cuối ngày (batch processing) sang **mô hình xử lý theo thời gian thực (real-time processing)**.
 
 > **Yêu cầu cốt lõi:** *"Sau khi kết thúc 1 cuộc hội thoại phía BE gửi user_id kèm log cho phía AI. Phía AI xử lý log luôn và tính điểm daily_score và code API phía BE để update điểm friendlyship_score."*
 
@@ -50,14 +50,16 @@ sequenceDiagram
     AI-->>BE: Response: {success: true}
 
 ```
+
 *Sơ đồ 1: Luồng cập nhật Friendship Score theo thời gian thực*
 
 ### Luồng hoạt động:
-1.  **Kết thúc hội thoại:** Người dùng hoàn thành một phiên trò chuyện.
-2.  **BE gửi yêu cầu:** Backend Service gửi một yêu cầu (POST) đến AI Scoring Service, đính kèm `user_id` và toàn bộ `conversation_log` của phiên vừa kết thúc.
-3.  **AI tính toán:** AI Scoring Service nhận log, phân tích và tính toán ra một "điểm thay đổi" (`friendship_score_change`) cùng các chỉ số liên quan khác (ví dụ: sự thay đổi của `topic_score`).
-4.  **AI gọi BE để cập nhật:** AI Service gọi một API do BE cung cấp để gửi "điểm thay đổi" này.
-5.  **BE cập nhật vào DB:** BE nhận điểm thay đổi, đọc bản ghi `friendship_status` hiện tại từ Database, tính toán các giá trị mới, và ghi đè bản ghi đã cập nhật trở lại vào Database.
+
+1. **Kết thúc hội thoại:** Người dùng hoàn thành một phiên trò chuyện.
+2. **BE gửi yêu cầu:** Backend Service gửi một yêu cầu (POST) đến AI Scoring Service, đính kèm `user_id` và toàn bộ `conversation_log` của phiên vừa kết thúc.
+3. **AI tính toán:** AI Scoring Service nhận log, phân tích và tính toán ra một "điểm thay đổi" (`friendship_score_change`) cùng các chỉ số liên quan khác (ví dụ: sự thay đổi của `topic_score`).
+4. **AI gọi BE để cập nhật:** AI Service gọi một API do BE cung cấp để gửi "điểm thay đổi" này.
+5. **BE cập nhật vào DB:** BE nhận điểm thay đổi, đọc bản ghi `friendship_status` hiện tại từ Database, tính toán các giá trị mới, và ghi đè bản ghi đã cập nhật trở lại vào Database.
 
 ## 3. Định nghĩa Database Schema và Data Structure
 
@@ -65,15 +67,15 @@ Cấu trúc dữ liệu sẽ được lưu trong một cơ sở dữ liệu SQL 
 
 **Collection/Table:** `friendship_status`
 
-| Tên trường              | Kiểu dữ liệu       | Mô tả                                                  | Ghi chú                                       |     |
-| :---------------------- | :----------------- | :----------------------------------------------------- | :-------------------------------------------- | --- |
-| `user_id`               | String             | (Primary Key) Mã định danh duy nhất của người dùng.    | Bắt buộc.                                     |     |
-| `friendship_score`      | Float              | Điểm số tổng thể đo lường mức độ thân thiết.           | Cập nhật sau mỗi phiên.                       |     |
-| `friendship_level`      | String             | Cấp độ tình bạn: `STRANGER`, `ACQUAINTANCE`, `FRIEND`. | Tự động cập nhật dựa trên `friendship_score`. |     |
-| `last_interaction_date` | ISO 8601 Timestamp | Dấu thời gian của lần tương tác cuối cùng.             | Cập nhật sau mỗi phiên.                       |     |
-| `streak_day`            | Integer            | Số ngày tương tác liên tiếp.                           | Cập nhật sau mỗi phiên.                       |     |
-| `topic_metrics`         | Object / Map       | Lưu trữ điểm và lịch sử tương tác cho từng chủ đề.     | Cập nhật sau mỗi phiên.                       |     |
-| `dynamic_memory`        | Array of Objects   | Danh sách các "ký ức chung" giữa Pika và người dùng.   | Thêm mới khi có sự kiện đáng nhớ.             |     |
+| Tên trường             | Kiểu dữ liệu    | Mô tả                                                          | Ghi chú                                               |  |
+| :------------------------ | :----------------- | :--------------------------------------------------------------- | :----------------------------------------------------- | - |
+| `user_id`               | String             | (Primary Key) Mã định danh duy nhất của người dùng.      | Bắt buộc.                                            |  |
+| `friendship_score`      | Float              | Điểm số tổng thể đo lường mức độ thân thiết.        | Cập nhật sau mỗi phiên.                            |  |
+| `friendship_level`      | String             | Cấp độ tình bạn:`STRANGER`, `ACQUAINTANCE`, `FRIEND`. | Tự động cập nhật dựa trên `friendship_score`. |  |
+| `last_interaction_date` | ISO 8601 Timestamp | Dấu thời gian của lần tương tác cuối cùng.              | Cập nhật sau mỗi phiên.                            |  |
+| `streak_day`            | Integer            | Số ngày tương tác liên tiếp.                              | Cập nhật sau mỗi phiên.                            |  |
+| `topic_metrics`         | Object / Map       | Lưu trữ điểm và lịch sử tương tác cho từng chủ đề. | Cập nhật sau mỗi phiên.                            |  |
+| `dynamic_memory`        | Array of Objects   | Danh sách các "ký ức chung" giữa Pika và người dùng.    | Thêm mới khi có sự kiện đáng nhớ.              |  |
 
 **Lưu ý:** Trường `daily_metrics` trong thiết kế ban đầu sẽ không còn cần thiết, vì các chỉ số giờ đây được xử lý và tích luỹ trực tiếp vào các trường chính sau mỗi phiên, thay vì được thu thập tạm thời và xử lý cuối ngày.
 
@@ -110,18 +112,15 @@ Sẽ có 2 API chính được định nghĩa để phục vụ cho module này.
 
 ### 4.1. API 1: Tính toán Friendship Score (BE -> AI)
 
-
->    **a. Thu thập các chỉ số từ `daily_metrics`:**
-    *   `total_turns`: Tổng số lượt trò chuyện trong ngày.
-    *   `user_initiated_questions`: Số lần người dùng chủ động hỏi Pika.
-    *   `followup_topics_count`: Tên chủ đề mới do người dùng gợi ý.
-    *   `session_emotion`: Cảm xúc chủ đạo trong ngày ('interesting', 'boring', 'neutral', 'angry', 'happy','sad').
-    *   `new_memories_count`: Số ký ức mới được tạo. 
-    *   `topic_details`: Chi tiết tương tác cho từng topic (số turn, số câu hỏi).
+> **a. Thu thập các chỉ số từ `daily_metrics`:**
+> *   `total_turns`: Tổng số lượt trò chuyện trong ngày.
+> *   `user_initiated_questions`: Số lần người dùng chủ động hỏi Pika.
+> *   `followup_topics_count`: Tên chủ đề mới do người dùng gợi ý.
+> *   `session_emotion`: Cảm xúc chủ đạo trong ngày ('interesting', 'boring', 'neutral', 'angry', 'happy','sad').
+> *   `new_memories_count`: Số ký ức mới được tạo.
+> *   `topic_details`: Chi tiết tương tác cho từng topic (số turn, số câu hỏi).
 
 > Logic Mapping Friendship vs Kho
-
-
 
 API này cho phép BE yêu cầu AI phân tích một cuộc hội thoại và trả về các điểm số cần cập nhật.
 
@@ -144,7 +143,6 @@ API này cho phép BE yêu cầu AI phân tích một cuộc hội thoại và t
     }
   }
   ```
-
 - **Response Body (Success 200):**
 
   ```json
@@ -169,12 +167,11 @@ API này cho phép BE yêu cầu AI phân tích một cuộc hội thoại và t
 
 API này cho phép AI gửi các điểm số đã tính toán để BE cập nhật vào cơ sở dữ liệu.
 
-- **Endpoint:** `POST /v1/users/update-friendship` 
+- **Endpoint:** `POST /v1/users/update-friendship`
 - **Service:** Backend Service
 - **Mô tả:** Nhận các thay đổi về điểm số và chỉ số từ AI, sau đó cập nhật vào bản ghi `friendship_status` của người dùng trong DB.
 - **Path Parameter:** `user_id` (String, required)
 - **Request Body:** (Giống hệt Response Body của API 1)
-
 - **Response Body (Success 200):**
 
   ```json
@@ -192,7 +189,8 @@ API này phục vụ cho việc lấy danh sách các hoạt động (Greeting, 
 - **Service:** AI Orchestration Service (hoặc một service riêng cho việc lựa chọn)
 - **Mô tả:** Dựa trên `friendship_status` của người dùng, chọn ra một danh sách các hoạt động phù hợp.
 - **Query Parameters:**
-   - truyền vào user_id
+
+  - truyền vào user_id
   - `type`: (String, optional) Loại agent cần lấy, ví dụ: `greeting`, `talk`, `game`. Nếu không có, trả về cả gói.
   - `count`: (Integer, optional) Số lượng cần lấy.
 - **Response Body (Success 200):**
@@ -218,36 +216,37 @@ API này phục vụ cho việc lấy danh sách các hoạt động (Greeting, 
 
 Logic này được thực thi trong **AI Scoring Service** sau mỗi cuộc hội thoại, dựa trên `Tài liệu 2` nhưng được điều chỉnh cho phù hợp.
 
-1.  **Thu thập chỉ số từ `conversation_log`:**
-    *   `total_turns`: Tổng số lượt trò chuyện trong phiên.
-    *   `user_initiated_questions`: Số lần người dùng chủ động hỏi Pika.
-    *   `session_emotion`: Cảm xúc chủ đạo của phiên (ví dụ: 'interesting', 'boring').
-    *   `new_memories_count`: Số ký ức mới được tạo trong phiên.
-    *   `topic_details`: Chi tiết tương tác cho từng topic (số turn, số câu hỏi).
+1. **Thu thập chỉ số từ `conversation_log`:**
 
-2.  **Tính toán `friendship_score_change`:**
-    *   `base_score = total_turns * 0.5`
-    *   `engagement_bonus = (user_initiated_questions * 3)`
-    *   `emotion_bonus`: +15 cho 'interesting', -15 cho 'boring'.
-    *   `memory_bonus = new_memories_count * 5`
-    *   **`friendship_score_change`** = `base_score + engagement_bonus + emotion_bonus + memory_bonus`
+   * `total_turns`: Tổng số lượt trò chuyện trong phiên.
+   * `user_initiated_questions`: Số lần người dùng chủ động hỏi Pika.
+   * `session_emotion`: Cảm xúc chủ đạo của phiên (ví dụ: 'interesting', 'boring').
+   * `new_memories_count`: Số ký ức mới được tạo trong phiên.
+   * `topic_details`: Chi tiết tương tác cho từng topic (số turn, số câu hỏi).
+2. **Tính toán `friendship_score_change`:**
 
-3.  **Tính toán `topic_metrics_update`:**
-    *   Với mỗi topic trong `topic_details`, tính `score_change` = (`turns` * 0.5 + `user_questions` * 3) và `turns_increment` = `turns`.
+   * `base_score = total_turns * 0.5`
+   * `engagement_bonus = (user_initiated_questions * 3)`
+   * `emotion_bonus`: +15 cho 'interesting', -15 cho 'boring'.
+   * `memory_bonus = new_memories_count * 5`
+   * **`friendship_score_change`** = `base_score + engagement_bonus + emotion_bonus + memory_bonus`
+3. **Tính toán `topic_metrics_update`:**
+
+   * Với mỗi topic trong `topic_details`, tính `score_change` = (`turns` * 0.5 + `user_questions` * 3) và `turns_increment` = `turns`.
 
 ### 5.2. Logic lựa chọn Agent (Selection Logic)
 
 Logic này được thực thi trong **AI Orchestration Service** (API 3) và tuân thủ chặt chẽ theo `Tài liệu 3`.
 
-1.  **Tải dữ liệu và Xác định Phase:** Lấy `friendship_status` mới nhất của user, xác định `Phase` (Stranger, Acquaintance, Friend) từ `friendship_score`.
-2.  **Lọc Kho Hoạt động:** Giới hạn các kho Greeting, Talk, Game dựa trên `Phase`.
-3.  **Chọn Greeting:** Dựa trên các quy tắc ưu tiên (sinh nhật, quay lại sau thời gian dài, cảm xúc phiên trước, v.v.).
-4.  **Chọn 4 Talk/Game:** Sử dụng phương pháp `Weighted Candidate Selection`:
-    *   Tạo danh sách ứng viên từ sở thích (`topic_score` cao), khám phá (ít tương tác), cảm xúc, và game.
-    *   Lắp ráp danh sách cuối cùng, cân bằng tỷ lệ Talk:Game, và chống lặp.
-5.  **Trả về kết quả:** Gửi danh sách `agent_id` đã được lựa chọn.
+1. **Tải dữ liệu và Xác định Phase:** Lấy `friendship_status` mới nhất của user, xác định `Phase` (Stranger, Acquaintance, Friend) từ `friendship_score`.
+2. **Lọc Kho Hoạt động:** Giới hạn các kho Greeting, Talk, Game dựa trên `Phase`.
+3. **Chọn Greeting:** Dựa trên các quy tắc ưu tiên (sinh nhật, quay lại sau thời gian dài, cảm xúc phiên trước, v.v.).
+4. **Chọn 4 Talk/Game:** Sử dụng phương pháp `Weighted Candidate Selection`:
+   * Tạo danh sách ứng viên từ sở thích (`topic_score` cao), khám phá (ít tương tác), cảm xúc, và game.
+   * Lắp ráp danh sách cuối cùng, cân bằng tỷ lệ Talk:Game, và chống lặp.
+5. **Trả về kết quả:** Gửi danh sách `agent_id` đã được lựa chọn.
 
-### 5.3 Visulize Logic Chọn lựa Agent 
+### 5.3 Visulize Logic Chọn lựa Agent
 
 #### Mermaid Diagrams: Logic Chọn Talk/Game-Agent Đầu Ngày
 
@@ -257,47 +256,47 @@ Logic này được thực thi trong **AI Orchestration Service** (API 3) và tu
 flowchart TD
     Start([Người dùng mở app đầu ngày]) --> Input[Input: user_id]
     Input --> Step1[Bước 1: Tải dữ liệu<br/>& Xác định Phase]
-    
+  
     Step1 --> LoadData[Tải friendship_status]
     LoadData --> DeterminePhase{Xác định Phase<br/>dựa trên friendship_score}
-    
+  
     DeterminePhase -->|score < 500| Phase1[Phase 1: STRANGER]
     DeterminePhase -->|500 ≤ score ≤ 3000| Phase2[Phase 2: ACQUAINTANCE]
     DeterminePhase -->|score > 3000| Phase3[Phase 3: FRIEND]
-    
+  
     Phase1 --> Step2[Bước 2: Lọc Kho Hoạt Động]
     Phase2 --> Step2
     Phase3 --> Step2
-    
+  
     Step2 --> FilterPools[Giới hạn kho theo Phase:<br/>- Greeting Pool<br/>- Talk Agent Pool<br/>- Game/Activity Pool]
-    
+  
     FilterPools --> Step3[Bước 3: Chọn Greeting]
     Step3 --> GreetingLogic[Priority-Based Selection]
     GreetingLogic --> GreetingSelected[greeting_id được chọn]
-    
+  
     GreetingSelected --> Step4[Bước 4: Chọn 4 Talk/Game]
     Step4 --> BuildCandidates[4a. Tạo danh sách ứng viên]
-    
+  
     BuildCandidates --> Pref[Ứng viên sở thích<br/>2 Agent topic_score cao nhất]
     BuildCandidates --> Explore[Ứng viên khám phá<br/>1 Agent ít tương tác]
     BuildCandidates --> Emotion[Ứng viên cảm xúc<br/>Nếu lastday_emotion tiêu cực]
     BuildCandidates --> Game[Ứng viên Game<br/>Từ kho Game của Phase]
-    
+  
     Pref --> Assemble[4b. Lắp ráp danh sách cuối cùng]
     Explore --> Assemble
     Emotion --> Assemble
     Game --> Assemble
-    
+  
     Assemble --> ApplyRatio[Áp dụng tỷ lệ Talk:Activity<br/>theo Phase]
     ApplyRatio --> AntiDup[Áp dụng bộ lọc chống lặp]
     AntiDup --> WeightPriority[Ưu tiên theo trọng số]
-    
+  
     WeightPriority --> Select4[Chọn 4 activity_id]
-    
+  
     Select4 --> Step5[Bước 5: Trả về kết quả]
     Step5 --> Output[Output: 1 greeting_id<br/>+ 4 activity_id]
     Output --> End([Kết thúc])
-    
+  
     style Start fill:####e1f5e1
     style End fill:####ffe1e1
     style Phase1 fill:####fff4e1
@@ -314,17 +313,17 @@ flowchart TD
 flowchart LR
     Start([Input: user_id]) --> Load[Tải friendship_status<br/>từ Database]
     Load --> GetScore[Lấy friendship_score]
-    
+  
     GetScore --> Check{Kiểm tra<br/>friendship_score}
-    
+  
     Check -->|< 500| P1[Phase 1: STRANGER<br/>━━━━━━━━━━<br/>Kho Greeting: V1<br/>Talk: Bề mặt<br/>Game: Đơn giản]
     Check -->|500-3000| P2[Phase 2: ACQUAINTANCE<br/>━━━━━━━━━━<br/>Kho Greeting: V1+V2<br/>Talk: +Trường học, Bạn bè<br/>Game: +Cá nhân hóa]
     Check -->|> 3000| P3[Phase 3: FRIEND<br/>━━━━━━━━━━<br/>Kho Greeting: V1+V2+V3<br/>Talk: +Gia đình, Lịch sử<br/>Game: +Dự án chung]
-    
+  
     P1 --> Output([Phase đã xác định])
     P2 --> Output
     P3 --> Output
-    
+  
     style Start fill:####e1f5e1
     style Output fill:####e1ffe1
     style P1 fill:####fff4e1
@@ -339,27 +338,27 @@ flowchart LR
 ```mermaid
 flowchart TD
     Start([Bắt đầu chọn Greeting]) --> Input[Input: Phase + friendship_status]
-    
+  
     Input --> Check1{Kiểm tra:<br/>user.birthday<br/>== hôm nay?}
-    
+  
     Check1 -->|Có| G1[✓ Chọn Greeting:<br/>S2 Birthday]
     Check1 -->|Không| Check2{Kiểm tra:<br/>last_interaction_date<br/>> 7 ngày?}
-    
+  
     Check2 -->|Có| G2[✓ Chọn Greeting:<br/>S4 Returning After<br/>Long Absence]
     Check2 -->|Không| Check3{Kiểm tra:<br/>lastday_emotion<br/>== sad?}
-    
+  
     Check3 -->|Có| G3[✓ Chọn Greeting:<br/>Agent hỏi cảm xúc]
     Check3 -->|Không| Check4{Kiểm tra:<br/>last_day_follow_up_topic<br/>tồn tại?}
-    
+  
     Check4 -->|Có| G4[✓ Chọn Greeting:<br/>Agent follow up topic]
     Check4 -->|Không| Default[Chọn ngẫu nhiên<br/>từ kho Greeting của Phase<br/>ưu tiên chưa dùng gần đây]
-    
+  
     G1 --> Output([greeting_id])
     G2 --> Output
     G3 --> Output
     G4 --> Output
     Default --> Output
-    
+  
     style Start fill:####e1f5e1
     style Output fill:####e1ffe1
     style G1 fill:####ffe1e1
@@ -376,32 +375,32 @@ flowchart TD
 ```mermaid
 flowchart TD
     Start([Bắt đầu tạo<br/>danh sách ứng viên]) --> Input[Input: Phase +<br/>friendship_status]
-    
+  
     Input --> Parallel{Tạo ứng viên<br/>từ nhiều nguồn}
-    
+  
     Parallel --> Source1[Nguồn 1: Sở thích]
     Parallel --> Source2[Nguồn 2: Khám phá]
     Parallel --> Source3[Nguồn 3: Cảm xúc]
     Parallel --> Source4[Nguồn 4: Game]
-    
+  
     Source1 --> S1Process[Lấy 2 Agent có<br/>topic_score cao nhất<br/>từ topic_metrics]
-    
+  
     Source2 --> S2Process[Lấy 1 Agent ngẫu nhiên<br/>từ kho Talk của Phase<br/>trong top 10 topic<br/>total_turns thấp nhất]
-    
+  
     Source3 --> S3Check{lastday_emotion<br/>tiêu cực?}
     S3Check -->|Có| S3Add[Thêm Game/Talk<br/>vui vẻ, hài hước]
     S3Check -->|Không| S3Skip[Bỏ qua]
-    
+  
     Source4 --> S4Process[Thêm các Game<br/>từ kho Game của Phase]
-    
+  
     S1Process --> Merge[Gộp tất cả ứng viên]
     S2Process --> Merge
     S3Add --> Merge
     S3Skip --> Merge
     S4Process --> Merge
-    
+  
     Merge --> CandidateList([Danh sách ứng viên<br/>hoàn chỉnh])
-    
+  
     style Start fill:####e1f5e1
     style CandidateList fill:####e1ffe1
     style S1Process fill:####e1f0ff
@@ -417,31 +416,31 @@ flowchart TD
 ```mermaid
 flowchart TD
     Start([Danh sách ứng viên]) --> Input[Input: Candidate List +<br/>Phase]
-    
+  
     Input --> Step1[Bước 1: Áp dụng tỷ lệ Talk:Activity]
-    
+  
     Step1 --> Ratio{Xác định tỷ lệ<br/>theo Phase}
-    
+  
     Ratio -->|Phase 1| R1[Tỷ lệ 40:60<br/>VD: 2 Talk + 2 Game<br/>hoặc 1 Talk + 3 Game]
     Ratio -->|Phase 2| R2[Tỷ lệ theo Phase 2<br/>cân bằng Talk/Game]
     Ratio -->|Phase 3| R3[Tỷ lệ theo Phase 3<br/>linh hoạt hơn]
-    
+  
     R1 --> Step2[Bước 2: Áp dụng bộ lọc chống lặp]
     R2 --> Step2
     R3 --> Step2
-    
+  
     Step2 --> Filter1[Kiểm tra: Greeting + Talk<br/>không cùng hỏi về cảm xúc]
     Filter1 --> Filter2[Kiểm tra: Không cùng<br/>hỏi về 1 topic]
     Filter2 --> Filter3[Loại bỏ các ứng viên<br/>trùng lặp]
-    
+  
     Filter3 --> Step3[Bước 3: Ưu tiên theo trọng số]
-    
+  
     Step3 --> Weight[Sắp xếp ưu tiên:<br/>1. Sở thích cao<br/>2. Ký ức liên quan<br/>3. Cảm xúc phù hợp<br/>4. Khám phá mới]
-    
+  
     Weight --> Select[Chọn 4 activity_id<br/>từ danh sách đã sắp xếp]
-    
+  
     Select --> Output([Output:<br/>4 activity_id])
-    
+  
     style Start fill:####e1f5e1
     style Output fill:####e1ffe1
     style R1 fill:####fff4e1
@@ -462,17 +461,17 @@ sequenceDiagram
     participant DB as Database
     participant GreetingPool as Greeting Pool
     participant ActivityPool as Talk/Game Pool
-    
+  
     User->>App: Mở app đầu ngày
     App->>Service: Gọi với user_id
-    
+  
     rect rgb(230, 245, 255)
         Note over Service,DB: BƯỚC 1: Tải dữ liệu & Xác định Phase
         Service->>DB: Query friendship_status(user_id)
         DB-->>Service: Trả về friendship_status
         Service->>Service: Tính Phase từ friendship_score
     end
-    
+  
     rect rgb(255, 245, 230)
         Note over Service,ActivityPool: BƯỚC 2: Lọc Kho Hoạt Động
         Service->>GreetingPool: Lọc theo Phase
@@ -480,7 +479,7 @@ sequenceDiagram
         Service->>ActivityPool: Lọc theo Phase
         ActivityPool-->>Service: Kho Talk/Game khả dụng
     end
-    
+  
     rect rgb(230, 255, 230)
         Note over Service,GreetingPool: BƯỚC 3: Chọn Greeting
         Service->>Service: Kiểm tra điều kiện ưu tiên
@@ -497,7 +496,7 @@ sequenceDiagram
         end
         GreetingPool-->>Service: greeting_id
     end
-    
+  
     rect rgb(255, 230, 245)
         Note over Service,ActivityPool: BƯỚC 4: Chọn 4 Talk/Game
         Service->>DB: Query topic_metrics
@@ -509,7 +508,7 @@ sequenceDiagram
         Service->>ActivityPool: Lấy 4 activity_id
         ActivityPool-->>Service: 4 activity_id
     end
-    
+  
     rect rgb(245, 230, 255)
         Note over Service,App: BƯỚC 5: Trả về kết quả
         Service->>Service: Lắp ráp danh sách cuối cùng
@@ -581,7 +580,7 @@ classDiagram
         -selectGreeting(phase, friendship_status)
         -selectActivities(phase, friendship_status)
     }
-    
+  
     class FriendshipStatus {
         +String user_id
         +Float friendship_score
@@ -593,7 +592,7 @@ classDiagram
         +String last_day_follow_up_topic
         +Array dynamic_memory
     }
-    
+  
     class Phase {
         <<enumeration>>
         STRANGER
@@ -604,7 +603,7 @@ classDiagram
         +getGamePool()
         +getTalkActivityRatio()
     }
-    
+  
     class GreetingSelector {
         +selectGreeting(phase, status)
         -checkBirthday()
@@ -613,7 +612,7 @@ classDiagram
         -checkFollowUpTopic()
         -selectRandom()
     }
-    
+  
     class ActivitySelector {
         +selectActivities(phase, status)
         -buildCandidateList()
@@ -625,7 +624,7 @@ classDiagram
         -applyAntiDuplication()
         -applyWeighting()
     }
-    
+  
     class CandidateList {
         +Array preference_candidates
         +Array explore_candidates
@@ -635,13 +634,13 @@ classDiagram
         +filter()
         +sort()
     }
-    
+  
     class DailyActivityList {
         +String greeting_id
         +Array activity_ids
         +validate()
     }
-    
+  
     SelectionService --> FriendshipStatus: uses
     SelectionService --> Phase: determines
     SelectionService --> GreetingSelector: delegates
@@ -667,7 +666,6 @@ Các diagram trên mô tả toàn bộ logic chọn Talk/Game-Agent đầu ngày
 7. **State diagram**: Sự chuyển đổi giữa các Phase
 8. **Class diagram**: Cấu trúc dữ liệu và quan hệ giữa các class
 
-
 ## 6. Integration Flow và Workflow
 
 Sự tích hợp của module này vào hệ thống lớn được thể hiện qua hai luồng chính.
@@ -676,33 +674,31 @@ Sự tích hợp của module này vào hệ thống lớn được thể hiện
 
 Đây là luồng chạy ngầm sau mỗi tương tác của người dùng, đảm bảo dữ liệu `friendship_status` luôn được cập nhật.
 
-1.  **Trigger:** `Conversation_End` event.
-2.  **BE:** Gói `user_id` và `log`.
-3.  **BE -> AI:** Gọi `POST /v1/scoring/calculate-friendship`.
-4.  **AI:** Xử lý và tính toán điểm thay đổi.
-5.  **AI -> BE:** Gọi `POST /v1/users/{user_id}/update-friendship`.
-6.  **BE:** Cập nhật `friendship_status` trong **Friendship Database**.
+1. **Trigger:** `Conversation_End` event.
+2. **BE:** Gói `user_id` và `log`.
+3. **BE -> AI:** Gọi `POST /v1/scoring/calculate-friendship`.
+4. **AI:** Xử lý và tính toán điểm thay đổi.
+5. **AI -> BE:** Gọi `POST /v1/users/{user_id}/update-friendship`.
+6. **BE:** Cập nhật `friendship_status` trong **Friendship Database**.
 
 ### 6.2. Luồng Lựa chọn Hoạt động (Activity Selection Flow)
 
 Đây là luồng được kích hoạt khi người dùng bắt đầu một phiên mới, quyết định "hôm nay Pika sẽ nói gì?"
 
-1.  **Trigger:** `Session_Start` event (người dùng mở app).
-2.  **BE:** Nhận diện `user_id`.
-3.  **BE -> AI Orchestration:** Gọi `GET /v1/users/{user_id}/suggested-activities`.
-4.  **AI Orchestration:**
-    a. Đọc `friendship_status` từ **Friendship Database**.
-    b. Thực thi **Selection Logic**.
-    c. Trả về danh sách `agent_id`.
-5.  **BE:** Nhận danh sách, lấy nội dung chi tiết của các Agent từ kho và hiển thị cho người dùng, bắt đầu với Greeting Agent.
+1. **Trigger:** `Session_Start` event (người dùng mở app).
+2. **BE:** Nhận diện `user_id`.
+3. **BE -> AI Orchestration:** Gọi `GET /v1/users/{user_id}/suggested-activities`.
+4. **AI Orchestration:**
+   a. Đọc `friendship_status` từ **Friendship Database**.
+   b. Thực thi **Selection Logic**.
+   c. Trả về danh sách `agent_id`.
+5. **BE:** Nhận danh sách, lấy nội dung chi tiết của các Agent từ kho và hiển thị cho người dùng, bắt đầu với Greeting Agent.
 
-
-## 7. Thiết kế DB 
+## 7. Thiết kế DB
 
 Bảng friendship of user : user_id, friendship_score, friendship_level, last_interaction_date, streak_day, topic_metrics
 
 Bảng friendship map with agent (3 loại: Gretting, Talk, Game/ACtivitity, )
-
 
 Database Schema (2 Bảng)
 
@@ -733,16 +729,16 @@ CREATE INDEX idx_friendship_level ON friendship_status(friendship_level);
 CREATE INDEX idx_updated_at ON friendship_status(updated_at DESC);
 ```
 
-| Cột | Kiểu | Mô tả |
-| :--- | :--- | :--- |
-| `user_id` | VARCHAR(255) | Primary key, định danh duy nhất của user |
-| `friendship_score` | FLOAT | Điểm tình bạn (cập nhật sau mỗi phiên) |
-| `friendship_level` | VARCHAR(50) | STRANGER / ACQUAINTANCE / FRIEND |
-| `last_interaction_date` | TIMESTAMP | Lần tương tác cuối cùng |
-| `streak_day` | INTEGER | Số ngày tương tác liên tiếp |
-| `topic_metrics` | JSONB | Điểm và lịch sử tương tác cho mỗi topic |
-| `created_at` | TIMESTAMP | Thời điểm tạo record |
-| `updated_at` | TIMESTAMP | Thời điểm cập nhật cuối cùng |
+| Cột                      | Kiểu        | Mô tả                                          |
+| :------------------------ | :----------- | :----------------------------------------------- |
+| `user_id`               | VARCHAR(255) | Primary key, định danh duy nhất của user     |
+| `friendship_score`      | FLOAT        | Điểm tình bạn (cập nhật sau mỗi phiên)   |
+| `friendship_level`      | VARCHAR(50)  | STRANGER / ACQUAINTANCE / FRIEND                 |
+| `last_interaction_date` | TIMESTAMP    | Lần tương tác cuối cùng                    |
+| `streak_day`            | INTEGER      | Số ngày tương tác liên tiếp               |
+| `topic_metrics`         | JSONB        | Điểm và lịch sử tương tác cho mỗi topic |
+| `created_at`            | TIMESTAMP    | Thời điểm tạo record                         |
+| `updated_at`            | TIMESTAMP    | Thời điểm cập nhật cuối cùng              |
 
 **Ví dụ dữ liệu:**
 
@@ -795,18 +791,18 @@ CREATE INDEX idx_mapping_level_type ON friendship_agent_mapping(friendship_level
 CREATE INDEX idx_mapping_active ON friendship_agent_mapping(is_active);
 ```
 
-| Cột | Kiểu | Mô tả |
-| :--- | :--- | :--- |
-| `id` | SERIAL | Primary key |
-| `friendship_level` | VARCHAR(50) | STRANGER / ACQUAINTANCE / FRIEND |
-| `agent_type` | VARCHAR(50) | GREETING / TALK / GAME_ACTIVITY |
-| `agent_id` | VARCHAR(255) | ID duy nhất của agent |
-| `agent_name` | VARCHAR(255) | Tên agent (hiển thị cho user) |
-| `agent_description` | TEXT | Mô tả chi tiết |
-| `weight` | FLOAT | Trọng số ưu tiên (1.0 = bình thường, 2.0 = ưu tiên cao) |
-| `is_active` | BOOLEAN | Có hoạt động hay không |
-| `created_at` | TIMESTAMP | Thời điểm tạo |
-| `updated_at` | TIMESTAMP | Thời điểm cập nhật |
+| Cột                  | Kiểu        | Mô tả                                                          |
+| :-------------------- | :----------- | :--------------------------------------------------------------- |
+| `id`                | SERIAL       | Primary key                                                      |
+| `friendship_level`  | VARCHAR(50)  | STRANGER / ACQUAINTANCE / FRIEND                                 |
+| `agent_type`        | VARCHAR(50)  | GREETING / TALK / GAME_ACTIVITY                                  |
+| `agent_id`          | VARCHAR(255) | ID duy nhất của agent                                          |
+| `agent_name`        | VARCHAR(255) | Tên agent (hiển thị cho user)                                 |
+| `agent_description` | TEXT         | Mô tả chi tiết                                                |
+| `weight`            | FLOAT        | Trọng số ưu tiên (1.0 = bình thường, 2.0 = ưu tiên cao) |
+| `is_active`         | BOOLEAN      | Có hoạt động hay không                                      |
+| `created_at`        | TIMESTAMP    | Thời điểm tạo                                                |
+| `updated_at`        | TIMESTAMP    | Thời điểm cập nhật                                          |
 
 **Ví dụ dữ liệu:**
 
@@ -868,6 +864,7 @@ VALUES
 ```
 
 ---
+
 ## 8. Define Folder Structure SOLID (Đơn giản nhưng Mạnh)
 
 ### 8.1. Cấu trúc Tổng thể
@@ -982,7 +979,7 @@ class Settings(BaseSettings):
     API_PORT: int = 8000
     ENVIRONMENT: str = "development"
     LOG_LEVEL: str = "INFO"
-    
+  
     class Config:
         env_file = ".env"
 
@@ -1101,10 +1098,10 @@ class BaseRepository(Generic[T]):
     def __init__(self, db: Session, model: Type[T]):
         self.db = db
         self.model = model
-    
+  
     def get_by_id(self, id: any):
         return self.db.query(self.model).filter(self.model.id == id).first()
-    
+  
     def create(self, obj_in):
         db_obj = self.model(**obj_in.dict())
         self.db.add(db_obj)
@@ -1122,12 +1119,12 @@ from app.repositories.base_repository import BaseRepository
 class FriendshipRepository(BaseRepository[FriendshipStatus]):
     def __init__(self, db: Session):
         super().__init__(db, FriendshipStatus)
-    
+  
     def get_by_user_id(self, user_id: str):
         return self.db.query(FriendshipStatus).filter(
             FriendshipStatus.user_id == user_id
         ).first()
-    
+  
     def update_score(self, user_id: str, score_change: float):
         status = self.get_by_user_id(user_id)
         if status:
@@ -1151,19 +1148,19 @@ from app.core.exceptions import FriendshipNotFoundError
 class FriendshipService:
     def __init__(self, db: Session):
         self.repository = FriendshipRepository(db)
-    
+  
     def calculate_score(self, request) -> CalculateFriendshipResponse:
         """Tính toán điểm từ log"""
         total_turns = len(request.conversation_log)
         user_initiated = sum(1 for msg in request.conversation_log if msg.speaker == "user")
-        
+      
         base_score = total_turns * 0.5
         engagement_bonus = user_initiated * 3
-        
+      
         return CalculateFriendshipResponse(
             friendship_score_change=base_score + engagement_bonus
         )
-    
+  
     def update_status(self, user_id: str, score_change: float):
         """Cập nhật trạng thái"""
         status = self.repository.update_score(user_id, score_change)
@@ -1226,7 +1223,7 @@ from app.core.config import settings
 def get_logger(name: str):
     logger = logging.getLogger(name)
     handler = logging.StreamHandler()
-    
+  
     if settings.ENVIRONMENT == "production":
         formatter = logging.Formatter(
             '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "message": "%(message)s"}'
@@ -1235,11 +1232,11 @@ def get_logger(name: str):
         formatter = logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )
-    
+  
     handler.setFormatter(formatter)
     logger.addHandler(handler)
     logger.setLevel(settings.LOG_LEVEL)
-    
+  
     return logger
 ```
 
@@ -1247,18 +1244,17 @@ def get_logger(name: str):
 
 ### 8.3. SOLID Principles Áp dụng
 
-| Principle | Cách Áp dụng | Lợi ích |
-| :--- | :--- | :--- |
-| **S - Single Responsibility** | Mỗi file có 1 trách nhiệm duy nhất (models, schemas, services, repositories) | Dễ test, dễ bảo trì |
-| **O - Open/Closed** | Dùng BaseRepository, BaseModel → dễ extend | Dễ thêm feature mới |
-| **L - Liskov Substitution** | Repository, Service có interface rõ ràng | Dễ mock, dễ test |
-| **I - Interface Segregation** | Tách schemas, models theo domain | Không phụ thuộc vào những gì không cần |
-| **D - Dependency Inversion** | Dùng dependency injection (get_db, services) | Loose coupling, dễ test |
+| Principle                           | Cách Áp dụng                                                                   | Lợi ích                                      |
+| :---------------------------------- | :-------------------------------------------------------------------------------- | :--------------------------------------------- |
+| **S - Single Responsibility** | Mỗi file có 1 trách nhiệm duy nhất (models, schemas, services, repositories) | Dễ test, dễ bảo trì                        |
+| **O - Open/Closed**           | Dùng BaseRepository, BaseModel → dễ extend                                     | Dễ thêm feature mới                         |
+| **L - Liskov Substitution**   | Repository, Service có interface rõ ràng                                       | Dễ mock, dễ test                             |
+| **I - Interface Segregation** | Tách schemas, models theo domain                                                 | Không phụ thuộc vào những gì không cần |
+| **D - Dependency Inversion**  | Dùng dependency injection (get_db, services)                                     | Loose coupling, dễ test                       |
 
 ---
-## 9. Chi tiết luồng đi của API 
 
-
+## 9. Chi tiết luồng đi của API
 
 1. [Luồng Dữ liệu Tổng thể (v3)](#luồng-dữ-liệu-tổng-thể-v3)
 2. [Health Check](#health-check)
@@ -1267,7 +1263,7 @@ def get_logger(name: str):
 5. [API 3: Get Friendship Status (BE → Context Service)](#api-3-get-friendship-status-be--context-service)
 6. [API 4: Get Suggested Activities (BE → Context Service)](#api-4-get-suggested-activities-be--context-service)
 7. [API 5-8: Agent Mapping Management](#api-5-8-agent-mapping-management)
-8. [Async Processing & Scheduling](#async-processing--scheduling)
+8. [Async Processing &amp; Scheduling](#async-processing--scheduling)
 9. [Error Handling](#error-handling)
 
 ---
@@ -1393,13 +1389,14 @@ POST /conversations/end
 
 #### Description
 
-**Gọi bởi:** Backend Service  
-**Gọi tới:** AI Scoring Service (via Message Queue)  
+**Gọi bởi:** Backend Service
+**Gọi tới:** AI Scoring Service (via Message Queue)
 **Mục đích:** Thông báo rằng một cuộc hội thoại đã kết thúc
 
 Backend chỉ gửi `conversation_id` (và `user_id` để tracking). AI Service sẽ consume event từ queue và tự động xử lý.
 
 **Đặc điểm:**
+
 - **Non-blocking:** Response 202 Accepted ngay, không cần đợi AI xử lý
 - **Asynchronous:** AI xử lý ở background
 - **Reliable:** Message được queue, đảm bảo không mất dữ liệu
@@ -1425,11 +1422,11 @@ Content-Type: application/json
 
 #### Request Fields
 
-| Field | Type | Required | Description |
-| :--- | :--- | :--- | :--- |
-| `user_id` | String | Yes | ID duy nhất của user |
-| `conversation_id` | String | Yes | ID duy nhất của cuộc hội thoại |
-| `session_metadata` | Object | No | Metadata về phiên (duration, agent_type, v.v.) |
+| Field                | Type   | Required | Description                                      |
+| :------------------- | :----- | :------- | :----------------------------------------------- |
+| `user_id`          | String | Yes      | ID duy nhất của user                           |
+| `conversation_id`  | String | Yes      | ID duy nhất của cuộc hội thoại              |
+| `session_metadata` | Object | No       | Metadata về phiên (duration, agent_type, v.v.) |
 
 #### cURL Example
 
@@ -1460,13 +1457,13 @@ curl -X POST http://localhost:8000/v1/conversations/end \
 
 #### Response Fields
 
-| Field | Type | Description |
-| :--- | :--- | :--- |
-| `status` | String | "accepted" - event đã được queue |
-| `message` | String | Thông báo |
-| `user_id` | String | ID của user (echo lại) |
-| `conversation_id` | String | ID của conversation (echo lại) |
-| `processing_id` | String | ID để tracking quá trình xử lý |
+| Field               | Type   | Description                           |
+| :------------------ | :----- | :------------------------------------ |
+| `status`          | String | "accepted" - event đã được queue |
+| `message`         | String | Thông báo                           |
+| `user_id`         | String | ID của user (echo lại)              |
+| `conversation_id` | String | ID của conversation (echo lại)      |
+| `processing_id`   | String | ID để tracking quá trình xử lý  |
 
 ---
 
@@ -1480,22 +1477,23 @@ GET /conversations/{conversation_id}
 
 #### Description
 
-**Gọi bởi:** AI Scoring Service  
-**Gọi tới:** Backend Service  
+**Gọi bởi:** AI Scoring Service
+**Gọi tới:** Backend Service
 **Mục đích:** Lấy toàn bộ conversation data dựa trên conversation_id
 
 AI Service gọi API này để lấy conversation log, metadata, v.v. để phân tích và tính điểm.
 
 **Đặc điểm:**
+
 - **Gọi bởi AI:** Chỉ AI Service gọi API này, không phải BE
 - **Caching:** Kết quả có thể cache để tránh gọi lại
 - **Timeout:** Nên có timeout hợp lý (ví dụ: 30s)
 
 #### Path Parameters
 
-| Parameter | Type | Required | Description |
-| :--- | :--- | :--- | :--- |
-| `conversation_id` | String | Yes | ID duy nhất của cuộc hội thoại |
+| Parameter           | Type   | Required | Description                         |
+| :------------------ | :----- | :------- | :---------------------------------- |
+| `conversation_id` | String | Yes      | ID duy nhất của cuộc hội thoại |
 
 #### cURL Example
 
@@ -1563,21 +1561,19 @@ curl -X GET http://localhost:8000/v1/conversations/conv_doanngoccuong
 
 #### Response Fields
 
-| Field              | Type     | Description                               |
-| :----------------- | :------- | :---------------------------------------- |
+| Field                | Type     | Description                                |
+| :------------------- | :------- | :----------------------------------------- |
 | `conversation_id`  | String   | ID của conversation                       |
 | `user_id`          | String   | ID của user                               |
-| `agent_id`         | String   | ID của agent được sử dụng                 |
+| `agent_id`         | String   | ID của agent được sử dụng            |
 | `agent_type`       | String   | Loại agent: GREETING, TALK, GAME_ACTIVITY |
-| `start_time`       | DateTime | Thời điểm bắt đầu                         |
-| `end_time`         | DateTime | Thời điểm kết thúc                        |
-| `duration_seconds` | Integer  | Thời lượng (giây)                         |
-| `conversation_log` | Array    | Danh sách các lượt nói                    |
-| `metadata`         | Object   | Metadata về phiên                         |
+| `start_time`       | DateTime | Thời điểm bắt đầu                    |
+| `end_time`         | DateTime | Thời điểm kết thúc                    |
+| `duration_seconds` | Integer  | Thời lượng (giây)                      |
+| `conversation_log` | Array    | Danh sách các lượt nói                |
+| `metadata`         | Object   | Metadata về phiên                        |
 
-
-### API Update Score: ngoài việc cho con rjob chạy ngầm, thì thêm 1 API để update friendship level of user_id 
-
+### API Update Score: ngoài việc cho con rjob chạy ngầm, thì thêm 1 API để update friendship level of user_id
 
 ---
 
@@ -1591,8 +1587,8 @@ POST /friendship/status
 
 #### Description
 
-**Gọi bởi:** Backend Service  
-**Gọi tới:** Context Handling Service  
+**Gọi bởi:** Backend Service
+**Gọi tới:** Context Handling Service
 **Mục đích:** Lấy trạng thái tình bạn hiện tại của user
 
 Khi user mở app hoặc cần lấy thông tin tình bạn, Backend gọi API này. Dữ liệu được lưu trong cache/DB, response nhanh.
@@ -1613,9 +1609,9 @@ Content-Type: application/json
 
 #### Request Fields
 
-| Field | Type | Required | Description |
-| :--- | :--- | :--- | :--- |
-| `user_id` | String | Yes | ID duy nhất của user |
+| Field       | Type   | Required | Description            |
+| :---------- | :----- | :------- | :--------------------- |
+| `user_id` | String | Yes      | ID duy nhất của user |
 
 #### cURL Example
 
@@ -1678,11 +1674,12 @@ POST /activities/suggest
 
 #### Description
 
-**Gọi bởi:** Backend Service  
-**Gọi tới:** Context Handling Service  
+**Gọi bởi:** Backend Service
+**Gọi tới:** Context Handling Service
 **Mục đích:** Lấy danh sách Agent được đề xuất (pre-computed)
 
 **Đặc điểm quan trọng:**
+
 - **Pre-computed:** Dữ liệu đã được tính toán sẵn bởi AI Service (real-time hoặc batch)
 - **Cached:** Response từ cache, rất nhanh (< 100ms)
 - **No Waiting:** BE không cần đợi AI xử lý, dữ liệu đã sẵn
@@ -1703,9 +1700,9 @@ Content-Type: application/json
 
 #### Request Fields
 
-| Field | Type | Required | Description |
-| :--- | :--- | :--- | :--- |
-| `user_id` | String | Yes | ID duy nhất của user |
+| Field       | Type   | Required | Description            |
+| :---------- | :----- | :------- | :--------------------- |
+| `user_id` | String | Yes      | ID duy nhất của user |
 
 #### cURL Example
 
@@ -1792,17 +1789,17 @@ curl -X POST http://localhost:8000/v1/activities/suggest \
 
 #### Response Fields
 
-| Field | Type | Description |
-| :--- | :--- | :--- |
-| `user_id` | String | ID của user |
-| `friendship_level` | String | STRANGER / ACQUAINTANCE / FRIEND |
-| `computed_at` | DateTime | Thời điểm tính toán candidates |
-| `greeting_agent` | Object | 1 greeting agent được chọn |
-| `talk_agents` | Array | Danh sách talk agents (2-3 cái) |
-| `game_agents` | Array | Danh sách game agents (1-2 cái) |
-| `reason` | String | Lý do chọn agent này |
-| `topic_score` | Float | Điểm topic (nếu có) |
-| `total_turns` | Integer | Số lượt tương tác (nếu có) |
+| Field                | Type     | Description                         |
+| :------------------- | :------- | :---------------------------------- |
+| `user_id`          | String   | ID của user                        |
+| `friendship_level` | String   | STRANGER / ACQUAINTANCE / FRIEND    |
+| `computed_at`      | DateTime | Thời điểm tính toán candidates |
+| `greeting_agent`   | Object   | 1 greeting agent được chọn      |
+| `talk_agents`      | Array    | Danh sách talk agents (2-3 cái)   |
+| `game_agents`      | Array    | Danh sách game agents (1-2 cái)   |
+| `reason`           | String   | Lý do chọn agent này             |
+| `topic_score`      | Float    | Điểm topic (nếu có)             |
+| `total_turns`      | Integer  | Số lượt tương tác (nếu có)  |
 
 ---
 
@@ -1818,10 +1815,10 @@ GET /agent-mappings
 
 ###### Query Parameters
 
-| Parameter | Type | Required | Description |
-| :--- | :--- | :--- | :--- |
-| `friendship_level` | String | No | Lọc theo level: STRANGER, ACQUAINTANCE, FRIEND |
-| `agent_type` | String | No | Lọc theo loại: GREETING, TALK, GAME_ACTIVITY |
+| Parameter            | Type   | Required | Description                                     |
+| :------------------- | :----- | :------- | :---------------------------------------------- |
+| `friendship_level` | String | No       | Lọc theo level: STRANGER, ACQUAINTANCE, FRIEND |
+| `agent_type`       | String | No       | Lọc theo loại: GREETING, TALK, GAME_ACTIVITY  |
 
 ###### cURL Examples
 
@@ -1928,9 +1925,9 @@ PUT /agent-mappings/{mapping_id}
 
 ###### Path Parameters
 
-| Parameter | Type | Required | Description |
-| :--- | :--- | :--- | :--- |
-| `mapping_id` | Integer | Yes | ID của agent mapping |
+| Parameter      | Type    | Required | Description           |
+| :------------- | :------ | :------- | :-------------------- |
+| `mapping_id` | Integer | Yes      | ID của agent mapping |
 
 ###### Request Body
 
@@ -1979,9 +1976,9 @@ DELETE /agent-mappings/{mapping_id}
 
 ###### Path Parameters
 
-| Parameter | Type | Required | Description |
-| :--- | :--- | :--- | :--- |
-| `mapping_id` | Integer | Yes | ID của agent mapping |
+| Parameter      | Type    | Required | Description           |
+| :------------- | :------ | :------- | :-------------------- |
+| `mapping_id` | Integer | Yes      | ID của agent mapping |
 
 ###### cURL Example
 
@@ -2004,8 +2001,8 @@ curl -X DELETE http://localhost:8000/v1/agent-mappings/20
 
 #### Background Job: Process Conversation End Event
 
-**Trigger:** Khi event "conversation.ended" được enqueue  
-**Worker:** AI Scoring Service (Background Worker)  
+**Trigger:** Khi event "conversation.ended" được enqueue
+**Worker:** AI Scoring Service (Background Worker)
 **Processing Time:** Sớm nhất có thể (thường < 5 giây)
 
 ###### Pseudocode
@@ -2020,26 +2017,26 @@ async def consume_conversation_events():
     """Consume events từ message queue"""
     while True:
         event = queue.get()  # Blocking call
-        
+      
         user_id = event.user_id
         conversation_id = event.conversation_id
-        
+      
         try:
             # Step 1: Lấy conversation data từ BE
             conv_data = await get_conversation_data(conversation_id)
-            
+          
             # Step 2: Tính toán điểm
             score_change, topic_updates, memories = calculate_friendship_score(conv_data)
-            
+          
             # Step 3: Update friendship status
             await update_friendship_status(user_id, score_change, topic_updates, memories)
-            
+          
             # Step 4: Compute & cache candidates
             candidates = compute_candidates(user_id)
             await cache_candidates(user_id, candidates)
-            
+          
             logger.info(f"Processed conversation {conversation_id} for user {user_id}")
-            
+          
         except Exception as e:
             logger.error(f"Error processing conversation {conversation_id}: {e}")
             queue.nack(event)  # Requeue for retry
@@ -2049,8 +2046,8 @@ async def consume_conversation_events():
 
 #### Scheduled Job: Batch Recompute Candidates (Optional)
 
-**Trigger:** Mỗi 6 giờ (hoặc theo cấu hình)  
-**Worker:** AI Scoring Service (Scheduler)  
+**Trigger:** Mỗi 6 giờ (hoặc theo cấu hình)
+**Worker:** AI Scoring Service (Scheduler)
 **Purpose:** Recompute candidates cho tất cả active users
 
 ###### Pseudocode
@@ -2059,27 +2056,27 @@ async def consume_conversation_events():
 @scheduler.scheduled_job('interval', hours=6)
 async def batch_recompute_candidates():
     """Recompute candidates cho tất cả users mỗi 6 giờ"""
-    
+  
     logger.info("Starting batch recompute candidates job")
-    
+  
     # Lấy tất cả active users
     users = db.query(FriendshipStatus).filter(
         FriendshipStatus.last_interaction_date >= now() - timedelta(days=30)
     ).all()
-    
+  
     for user in users:
         try:
             # Compute candidates dựa trên friendship_level hiện tại
             candidates = compute_candidates(user.user_id)
-            
+          
             # Cache candidates
             await cache_candidates(user.user_id, candidates)
-            
+          
             logger.info(f"Recomputed candidates for user {user.user_id}")
-            
+          
         except Exception as e:
             logger.error(f"Error recomputing candidates for user {user.user_id}: {e}")
-    
+  
     logger.info("Batch recompute candidates job completed")
 ```
 
@@ -2124,15 +2121,15 @@ async def batch_recompute_candidates():
 
 #### Error Status Codes
 
-| Status Code | Meaning | Example |
-| :--- | :--- | :--- |
-| 200 | OK | Request thành công |
-| 201 | Created | Resource được tạo thành công |
-| 202 | Accepted | Event được queue, sẽ xử lý async |
-| 400 | Bad Request | Request body không hợp lệ |
-| 404 | Not Found | Resource không tìm thấy |
-| 422 | Unprocessable Entity | Validation error |
-| 500 | Internal Server Error | Server error |
+| Status Code | Meaning               | Example                                |
+| :---------- | :-------------------- | :------------------------------------- |
+| 200         | OK                    | Request thành công                   |
+| 201         | Created               | Resource được tạo thành công     |
+| 202         | Accepted              | Event được queue, sẽ xử lý async |
+| 400         | Bad Request           | Request body không hợp lệ           |
+| 404         | Not Found             | Resource không tìm thấy             |
+| 422         | Unprocessable Entity  | Validation error                       |
+| 500         | Internal Server Error | Server error                           |
 
 ---
 
@@ -2196,26 +2193,26 @@ curl -X POST http://localhost:8000/v1/activities/suggest \
 
 ### Architecture Benefits (v3)
 
-| Benefit | Giải thích |
-| :--- | :--- |
-| **Non-blocking** | BE không cần đợi AI xử lý, response ngay với 202 Accepted |
-| **Scalable** | AI xử lý ở background, có thể scale workers độc lập |
-| **Reliable** | Message queue đảm bảo không mất dữ liệu, có retry mechanism |
-| **Fast Response** | Candidates đã pre-computed, BE lấy từ cache (< 100ms) |
-| **Flexible** | Có thể xử lý real-time hoặc batch mỗi 6h |
-| **Decoupled** | BE và AI độc lập, có thể deploy riêng |
+| Benefit                 | Giải thích                                                        |
+| :---------------------- | :------------------------------------------------------------------ |
+| **Non-blocking**  | BE không cần đợi AI xử lý, response ngay với 202 Accepted    |
+| **Scalable**      | AI xử lý ở background, có thể scale workers độc lập         |
+| **Reliable**      | Message queue đảm bảo không mất dữ liệu, có retry mechanism |
+| **Fast Response** | Candidates đã pre-computed, BE lấy từ cache (< 100ms)           |
+| **Flexible**      | Có thể xử lý real-time hoặc batch mỗi 6h                      |
+| **Decoupled**     | BE và AI độc lập, có thể deploy riêng                        |
 
 ---
 
 ### Technology Stack (Recommended)
 
-| Component | Technology | Purpose |
-| :--- | :--- | :--- |
-| **Message Queue** | RabbitMQ / Kafka | Enqueue conversation end events |
-| **Cache** | Redis | Cache pre-computed candidates |
-| **Database** | PostgreSQL | Lưu friendship_status, agent_mappings |
-| **Background Worker** | Celery / APScheduler | Consume events, batch jobs |
-| **API Framework** | FastAPI | HTTP API endpoints |
+| Component                   | Technology           | Purpose                                |
+| :-------------------------- | :------------------- | :------------------------------------- |
+| **Message Queue**     | RabbitMQ / Kafka     | Enqueue conversation end events        |
+| **Cache**             | Redis                | Cache pre-computed candidates          |
+| **Database**          | PostgreSQL           | Lưu friendship_status, agent_mappings |
+| **Background Worker** | Celery / APScheduler | Consume events, batch jobs             |
+| **API Framework**     | FastAPI              | HTTP API endpoints                     |
 
 ---
 
@@ -2259,39 +2256,34 @@ Frontend/App
 
 ### Summary: API Endpoints (v3)
 
-| # | Endpoint | Method | Gọi bởi | Mục đích | Response |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 1 | `/conversations/end` | POST | BE | Notify conversation end | 202 Accepted |
-| 2 | `/conversations/{id}` | GET | AI | Lấy conversation data | 200 OK |
-| 3 | `/friendship/status` | POST | BE | Lấy friendship status | 200 OK |
-| 4 | `/activities/suggest` | POST | BE | Lấy pre-computed candidates | 200 OK |
-| 5 | `/agent-mappings` | GET | Admin | Lấy danh sách mappings | 200 OK |
-| 6 | `/agent-mappings` | POST | Admin | Tạo mapping mới | 201 Created |
-| 7 | `/agent-mappings/{id}` | PUT | Admin | Cập nhật mapping | 200 OK |
-| 8 | `/agent-mappings/{id}` | DELETE | Admin | Xóa mapping | 200 OK |
+| # | Endpoint                 | Method | Gọi bởi | Mục đích                  | Response     |
+| :- | :----------------------- | :----- | :-------- | :--------------------------- | :----------- |
+| 1 | `/conversations/end`   | POST   | BE        | Notify conversation end      | 202 Accepted |
+| 2 | `/conversations/{id}`  | GET    | AI        | Lấy conversation data       | 200 OK       |
+| 3 | `/friendship/status`   | POST   | BE        | Lấy friendship status       | 200 OK       |
+| 4 | `/activities/suggest`  | POST   | BE        | Lấy pre-computed candidates | 200 OK       |
+| 5 | `/agent-mappings`      | GET    | Admin     | Lấy danh sách mappings     | 200 OK       |
+| 6 | `/agent-mappings`      | POST   | Admin     | Tạo mapping mới            | 201 Created  |
+| 7 | `/agent-mappings/{id}` | PUT    | Admin     | Cập nhật mapping           | 200 OK       |
+| 8 | `/agent-mappings/{id}` | DELETE | Admin     | Xóa mapping                 | 200 OK       |
 
 ---
 
 ### Key Differences: v2 vs v3
 
-| Aspect | v2 (Synchronous) | v3 (Event-Driven Async) |
-| :--- | :--- | :--- |
-| **BE gửi** | Toàn bộ conversation log | Chỉ conversation_id |
-| **AI lấy data** | Từ request body | Gọi API riêng |
-| **Processing** | Synchronous (BE đợi) | Asynchronous (background) |
-| **Response** | 200 OK sau khi xong | 202 Accepted ngay |
-| **Candidates** | Tính khi BE request | Pre-computed, cached |
-| **Latency** | Cao (phụ thuộc AI) | Thấp (từ cache) |
-| **Scalability** | Khó scale | Dễ scale |
-| **Reliability** | Có thể mất dữ liệu | Queue đảm bảo |
-
-
+| Aspect                 | v2 (Synchronous)           | v3 (Event-Driven Async)   |
+| :--------------------- | :------------------------- | :------------------------ |
+| **BE gửi**      | Toàn bộ conversation log | Chỉ conversation_id      |
+| **AI lấy data** | Từ request body           | Gọi API riêng           |
+| **Processing**   | Synchronous (BE đợi)     | Asynchronous (background) |
+| **Response**     | 200 OK sau khi xong        | 202 Accepted ngay         |
+| **Candidates**   | Tính khi BE request       | Pre-computed, cached      |
+| **Latency**      | Cao (phụ thuộc AI)       | Thấp (từ cache)         |
+| **Scalability**  | Khó scale                 | Dễ scale                 |
+| **Reliability**  | Có thể mất dữ liệu    | Queue đảm bảo          |
 
 ---
 
-
 ---
 
-**Kết luận:** Tài liệu này cung cấp một kế hoạch triển khai kỹ thuật toàn diện cho module **Context Handling - Friendlyship Management**, chuyển đổi hệ thống sang mô hình cập nhật thời gian thực để tạo ra một trải nghiệm người dùng linh hoạt và cá nhân hóa hơn. Các API và cấu trúc dữ liệu được định nghĩa rõ ràng để đảm bảo sự phối hợp nhịp nhàng giữa Backend, AI và Database. 
-
-
+**Kết luận:** Tài liệu này cung cấp một kế hoạch triển khai kỹ thuật toàn diện cho module **Context Handling - Friendlyship Management**, chuyển đổi hệ thống sang mô hình cập nhật thời gian thực để tạo ra một trải nghiệm người dùng linh hoạt và cá nhân hóa hơn. Các API và cấu trúc dữ liệu được định nghĩa rõ ràng để đảm bảo sự phối hợp nhịp nhàng giữa Backend, AI và Database.

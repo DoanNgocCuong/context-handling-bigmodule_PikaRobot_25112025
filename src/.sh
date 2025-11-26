@@ -47,6 +47,11 @@ curl -X POST "http://localhost:8000/v1/friendship_status/calculate-score-and-upd
 
 
 
-3. From user_id -> get friendship_status -> get suggested activities: 
-
-
+3. From user_id -> get suggested activities:
+```
+curl -X POST "http://localhost:8000/v1/activities/suggest" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "user_doanngoccuong"
+  }'
+```

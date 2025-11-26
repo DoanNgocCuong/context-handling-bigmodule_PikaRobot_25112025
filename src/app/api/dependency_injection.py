@@ -9,6 +9,7 @@ from app.services.friendship_score_calculation_service import FriendshipScoreCal
 from app.services.conversation_data_fetch_service import ConversationDataFetchService
 from app.services.friendship_status_store_service import FriendshipStatusStoreService
 from app.services.friendship_status_update_service import FriendshipStatusUpdateService
+from app.services.activity_suggestion_service import ActivitySuggestionService
 from app.utils.logger_setup import get_logger
 
 logger = get_logger(__name__)
@@ -92,5 +93,14 @@ def get_friendship_status_update_service(
     Get friendship status update service (database-backed).
     """
     return FriendshipStatusUpdateService(db)
+
+
+def get_activity_suggestion_service(
+    db: Session = Depends(get_db),
+) -> ActivitySuggestionService:
+    """
+    Get activity suggestion service (uses selection logic and caching).
+    """
+    return ActivitySuggestionService(db)
 
 
