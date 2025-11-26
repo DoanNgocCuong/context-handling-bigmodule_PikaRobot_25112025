@@ -119,3 +119,46 @@ curl -X 'POST' \
 }
 
 ```
+
+
+```
+curl -X 'POST' \
+  'http://localhost:30022/v1/conversations/end' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+
+  "conversation_id": "conv_20251126_005",
+  "user_id": "user_doanngoccuong",
+  "bot_id": "talk_movie_preference",
+  "bot_name": "Movie Preference Talk",
+  "bot_type": "TALK",
+  "conversation_log": [
+   
+  ],
+  "end_time": "2025-11-26T10:20:00Z",
+  "start_time": "2025-11-26T10:00:00Z"
+}'
+
+```
+
+```
+
+curl -X 'POST' \
+  'http://localhost:30022/v1/conversations/end' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+
+  "conversation_id": "conv_20251126_005",
+  "user_id": "user_doanngoccuong",
+  "bot_id": "talk_movie_preference",
+  "bot_name": "Movie Preference Talk",
+  "bot_type": "TALK",
+  "conversation_log": [
+   
+  ],
+  "end_time": "2025-11-26T10:20:00Z",
+  "start_time": "2025-11-26T10:00:00Z", 
+  "status": "PENDING"
+}'
