@@ -20,6 +20,7 @@ celery = "^5.3.4"
 python-dotenv = "^1.0.0"
 httpx = "^0.25.1"
 python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+APScheduler = "^3.10.4"
 python-dateutil = "^2.8.2"
 structlog = "^23.2.0"
 

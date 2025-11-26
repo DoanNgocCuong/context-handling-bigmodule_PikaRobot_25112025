@@ -1,11 +1,16 @@
 """
 Repository for conversation_events table.
 """
-from typing import Any, Dict, Optional
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.core.constants_enums import (
+    CONVERSATION_EVENT_RETRY_HOURS,
+    ConversationEventStatus,
+)
 from app.models.conversation_event_model import ConversationEvent
 
 
@@ -33,6 +38,70 @@ class ConversationEventRepository:
         except IntegrityError:
             self.db.rollback()
             raise
+        self.db.refresh(event)
+        return event
+
+    def fetch_due_events(self, batch_size: int = 25) -> List[ConversationEvent]:
+        """Return pending/failed events whose next_attempt_at has arrived."""
+        now = datetime.now(timezone.utc)
+        return (
+            self.db.query(self.model)
+            .filter(
+                self.model.status.in_(
+                    [
+                        ConversationEventStatus.PENDING.value,
+                        ConversationEventStatus.FAILED.value,
+                    ]
+                )
+            )
+            .filter(self.model.next_attempt_at <= now)
+            .order_by(self.model.next_attempt_at.asc())
+            .limit(batch_size)
+            .all()
+        )
+
+    def mark_processing(self, event: ConversationEvent) -> ConversationEvent:
+        """Set status to PROCESSING and increment attempt counter."""
+        event.status = ConversationEventStatus.PROCESSING.value
+        event.attempt_count = (event.attempt_count or 0) + 1
+        event.updated_at = datetime.now(timezone.utc)
+        self.db.commit()
+        self.db.refresh(event)
+        return event
+
+    def mark_processed(
+        self,
+        event: ConversationEvent,
+        friendship_score_change: float,
+        friendship_level: str,
+    ) -> ConversationEvent:
+        """Set status to PROCESSED with processing metadata."""
+        event.status = ConversationEventStatus.PROCESSED.value
+        event.friendship_score_change = friendship_score_change
+        event.new_friendship_level = friendship_level
+        event.processed_at = datetime.now(timezone.utc)
+        event.error_code = None
+        event.error_details = None
+        event.next_attempt_at = event.processed_at
+        event.updated_at = event.processed_at
+        self.db.commit()
+        self.db.refresh(event)
+        return event
+
+    def mark_failed(
+        self,
+        event: ConversationEvent,
+        error_code: str,
+        error_details: str,
+    ) -> ConversationEvent:
+        """Set status to FAILED and schedule retry."""
+        event.status = ConversationEventStatus.FAILED.value
+        event.error_code = error_code
+        event.error_details = error_details
+        retry_at = datetime.now(timezone.utc) + timedelta(hours=CONVERSATION_EVENT_RETRY_HOURS)
+        event.next_attempt_at = retry_at
+        event.updated_at = datetime.now(timezone.utc)
+        self.db.commit()
         self.db.refresh(event)
         return event
 

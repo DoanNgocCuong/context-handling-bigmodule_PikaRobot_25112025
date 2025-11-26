@@ -30,3 +30,6 @@ class ActivitySuggestionService:
         return suggestions
 
 
+
+
+

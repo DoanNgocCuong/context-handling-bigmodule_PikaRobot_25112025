@@ -113,12 +113,13 @@ Sẽ có 2 API chính được định nghĩa để phục vụ cho module này.
 ### 4.1. API 1: Tính toán Friendship Score (BE -> AI)
 
 > **a. Thu thập các chỉ số từ `daily_metrics`:**
-> *   `total_turns`: Tổng số lượt trò chuyện trong ngày.
-> *   `user_initiated_questions`: Số lần người dùng chủ động hỏi Pika.
-> *   `followup_topics_count`: Tên chủ đề mới do người dùng gợi ý.
-> *   `session_emotion`: Cảm xúc chủ đạo trong ngày ('interesting', 'boring', 'neutral', 'angry', 'happy','sad').
-> *   `new_memories_count`: Số ký ức mới được tạo.
-> *   `topic_details`: Chi tiết tương tác cho từng topic (số turn, số câu hỏi).
+>
+> * `total_turns`: Tổng số lượt trò chuyện trong ngày.
+> * `user_initiated_questions`: Số lần người dùng chủ động hỏi Pika.
+> * `followup_topics_count`: Tên chủ đề mới do người dùng gợi ý.
+> * `session_emotion`: Cảm xúc chủ đạo trong ngày ('interesting', 'boring', 'neutral', 'angry', 'happy','sad').
+> * `new_memories_count`: Số ký ức mới được tạo.
+> * `topic_details`: Chi tiết tương tác cho từng topic (số turn, số câu hỏi).
 
 > Logic Mapping Friendship vs Kho
 
@@ -702,30 +703,55 @@ Bảng friendship map with agent (3 loại: Gretting, Talk, Game/ACtivitity, )
 
 Database Schema (2 Bảng)
 
-### 7.1. Bảng `friendship_status`
+### 7.1. Bảng chính 1: `friendship_status`
 
 Lưu trạng thái tình bạn của user.
 
 ```sql
+  
+
+--- friendship_status
+
+  
+
 CREATE TABLE friendship_status (
-    user_id VARCHAR(255) PRIMARY KEY,
-    friendship_score FLOAT DEFAULT 0.0 NOT NULL,
-    friendship_level VARCHAR(50) DEFAULT 'STRANGER' NOT NULL,
-    -- STRANGER (0-99), ACQUAINTANCE (100-499), FRIEND (500+)
-    last_interaction_date TIMESTAMP WITH TIME ZONE,
-    streak_day INTEGER DEFAULT 0 NOT NULL,
-    topic_metrics JSONB DEFAULT '{}' NOT NULL,
-    -- {
-    --   "agent_movie": { "score": 52.0, "turns": 65, "last_date": "..." },
-    --   "agent_animal": { "score": 28.5, "turns": 32, "last_date": "..." }
-    -- }
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+
+    user_id VARCHAR(255) PRIMARY KEY,
+
+    friendship_score FLOAT DEFAULT 0.0 NOT NULL,
+
+    friendship_level VARCHAR(50) DEFAULT 'STRANGER' NOT NULL,
+
+    -- STRANGER (0-99), ACQUAINTANCE (100-499), FRIEND (500+)
+
+    last_interaction_date TIMESTAMP WITH TIME ZONE,
+
+    streak_day INTEGER DEFAULT 0 NOT NULL,
+
+    topic_metrics JSONB DEFAULT '{}' NOT NULL,
+
+    -- {
+
+    --   "agent_movie": { "score": 52.0, "turns": 65, "last_date": "..." },
+
+    --   "agent_animal": { "score": 28.5, "turns": 32, "last_date": "..." }
+
+    -- }
+
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+
 );
 
+  
+
 -- Indexes
+
 CREATE INDEX idx_friendship_score ON friendship_status(friendship_score);
+
 CREATE INDEX idx_friendship_level ON friendship_status(friendship_level);
+
 CREATE INDEX idx_updated_at ON friendship_status(updated_at DESC);
 ```
 
@@ -764,31 +790,81 @@ CREATE INDEX idx_updated_at ON friendship_status(updated_at DESC);
 }
 ```
 
-### 7.2. Bảng `friendship_agent_mapping`
+### 7.2. Bảng chính 2 : `friendship_agent_mapping`
 
 Mapping giữa `friendship_level` và các Agent theo loại.
 
 ```sql
+  
+  
+
+--- friendship_agent_mapping
+
 CREATE TABLE friendship_agent_mapping (
-    id SERIAL PRIMARY KEY,
-    friendship_level VARCHAR(50) NOT NULL,
-    -- STRANGER, ACQUAINTANCE, FRIEND
-    agent_type VARCHAR(50) NOT NULL,
-    -- GREETING, TALK, GAME_ACTIVITY
-    agent_id VARCHAR(255) NOT NULL,
-    agent_name VARCHAR(255) NOT NULL,
-    agent_description TEXT,
-    weight FLOAT DEFAULT 1.0,
-    -- Trọng số ưu tiên (cao hơn = được chọn nhiều hơn)
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(friendship_level, agent_type, agent_id)
+
+    id SERIAL PRIMARY KEY,
+
+    friendship_level VARCHAR(50) NOT NULL,
+
+    -- STRANGER, ACQUAINTANCE, FRIEND
+
+  
+
+    agent_type VARCHAR(50) NOT NULL,
+
+    -- GREETING, TALK, GAME_ACTIVITY
+
+  
+
+    topic VARCHAR(100),
+
+    -- Chủ đề gắn với agent: ví dụ 'pets', 'school', 'movie'
+
+  
+
+    agent_id VARCHAR(255) NOT NULL,
+
+    agent_name VARCHAR(255) NOT NULL,
+
+    agent_description TEXT,
+
+  
+
+    weight FLOAT DEFAULT 1.0,
+
+    -- Trọng số ưu tiên (cao hơn = được chọn nhiều hơn)
+
+  
+
+    is_active BOOLEAN DEFAULT TRUE,
+
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+
+  
+
+    UNIQUE (friendship_level, agent_type, agent_id)
+
 );
 
--- Indexes
-CREATE INDEX idx_mapping_level_type ON friendship_agent_mapping(friendship_level, agent_type);
-CREATE INDEX idx_mapping_active ON friendship_agent_mapping(is_active);
+  
+
+CREATE INDEX idx_mapping_level_type
+
+ON friendship_agent_mapping(friendship_level, agent_type);
+
+  
+
+CREATE INDEX idx_mapping_active
+
+ON friendship_agent_mapping(is_active);
+
+  
+
+CREATE INDEX idx_mapping_topic
+
+ON friendship_agent_mapping(topic);
 ```
 
 | Cột                  | Kiểu        | Mô tả                                                          |
@@ -863,7 +939,557 @@ VALUES
 ('FRIEND', 'GAME_ACTIVITY', 'game_collaborative_art', 'Collaborative Art', 'Tạo tác phẩm nghệ thuật chung', 2.0, TRUE);
 ```
 
----
+### 7.3 Bảng phụ 1: agent_prompting để giao tiếp với phía Academy Prompting
+
+```
+  
+
+--- agent_prompting table
+
+  
+
+CREATE TABLE agent_prompting (
+
+    id SERIAL PRIMARY KEY,
+
+  
+
+    agent_id VARCHAR(255) NOT NULL,
+
+    agent_name VARCHAR(255) NOT NULL,
+
+  
+
+    goal TEXT NOT NULL,
+
+    -- Mục tiêu sư phạm / hành vi của agent
+
+  
+
+    prompt_template TEXT NOT NULL,
+
+    -- Prompt "thô" có placeholder, ví dụ: {{user_name}}, {{topic}}
+
+  
+
+    prompt_final TEXT,
+
+    -- Prompt đã compile / cache sẵn (optional, có thể null)
+
+  
+
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+
+  
+
+    UNIQUE (agent_id)
+
+);
+
+  
+
+CREATE INDEX idx_agent_prompting_agent_id
+
+ON agent_prompting(agent_id);
+```
+
+```sql
+
+-- GREETING: greeting_welcome
+
+INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, prompt_final)
+
+VALUES (
+
+    'greeting_welcome',
+
+    'Welcome Greeting',
+
+    'Chào mừng user mới, tạo cảm giác an toàn và thân thiện ngay từ lần gặp đầu tiên.',
+
+    $$You are Pika, a friendly English-learning buddy for children aged 5-10.
+
+  
+
+Goal:
+
+- Welcome a NEW user warmly
+
+- Make them feel safe and curious
+
+- Keep language simple and short
+
+  
+
+Context:
+
+- user_name: {{user_name}}
+
+- user_language_level: {{user_level}}
+
+  
+
+Instruction:
+
+Greet the user in a warm and simple way, using 1–2 short sentences.
+
+Avoid teaching content here, just say hello and show excitement to meet them.$$,
+
+    NULL
+
+);
+
+  
+
+-- GREETING: greeting_memory_recall
+
+INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, prompt_final)
+
+VALUES (
+
+    'greeting_memory_recall',
+
+    'Memory Recall Greeting',
+
+    'Nhắc lại một ký ức chung gần đây để tạo cảm giác Pika thực sự nhớ user.',
+
+    $$You are Pika, a buddy who REMEMBERS shared memories with the child.
+
+  
+
+Goal:
+
+- Start the session by recalling a recent shared memory
+
+- Make the child feel "Wow, Pika remembers me!"
+
+- Keep it light and positive
+
+  
+
+Context:
+
+- user_name: {{user_name}}
+
+- last_memory_content: {{last_memory_content}}
+
+- last_interaction_days_ago: {{last_interaction_days_ago}}
+
+  
+
+Instruction:
+
+Create a greeting that:
+
+1) Says hello to the user by name.
+
+2) Briefly recalls {{last_memory_content}} in a natural way.
+
+3) Adds one motivating sentence to start today’s session.$$,
+
+    NULL
+
+);
+
+  
+
+-- TALK: talk_hobbies
+
+INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, prompt_final)
+
+VALUES (
+
+    'talk_hobbies',
+
+    'Hobbies Talk',
+
+    'Gợi mở để bé nói về sở thích cá nhân (hobbies), xây trust và thu thập thông tin sở thích.',
+
+    $$You are Pika, a talk agent focusing on hobbies.
+
+  
+
+Goal:
+
+- Help the child talk about their hobbies
+
+- Ask 1–2 simple follow-up questions
+
+- Keep the tone curious and supportive
+
+  
+
+Context:
+
+- user_name: {{user_name}}
+
+- known_hobbies: {{known_hobbies}}   -- may be empty or null
+
+- user_level: {{user_level}}
+
+  
+
+Instruction:
+
+Start with a friendly line and then:
+
+- If known_hobbies is not empty: refer to one hobby and ask a follow-up.
+
+- If known_hobbies is empty: ask an open question about what they like to do in their free time.
+
+Use simple English at level {{user_level}} and short sentences.$$,
+
+    NULL
+
+);
+
+  
+
+-- TALK: talk_movie_preference
+
+INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, prompt_final)
+
+VALUES (
+
+    'talk_movie_preference',
+
+    'Movie Preference Talk',
+
+    'Đào sâu vào chủ đề phim yêu thích để tăng điểm topic "movie" và tạo cơ hội tương tác dài hơi.',
+
+    $$You are Pika, talking with a child about movies they like.
+
+  
+
+Goal:
+
+- Let the child share their favorite movies or characters
+
+- Ask 1–3 short questions
+
+- Optionally connect to a previous memory about movies
+
+  
+
+Context:
+
+- user_name: {{user_name}}
+
+- last_movie_memory: {{last_movie_memory}}  -- e.g. "Spirited Away", may be null
+
+- user_level: {{user_level}}
+
+  
+
+Instruction:
+
+Create a short dialogue turn:
+
+- Start with 1 friendly sentence.
+
+- If last_movie_memory exists, mention it briefly ("Last time you told me about ...").
+
+- Ask 1–2 simple questions about movies or characters the child likes.
+
+Keep it fun and light, CEFR level {{user_level}}.$$,
+
+    NULL
+
+);
+
+  
+
+-- GAME: game_drawing
+
+INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, prompt_final)
+
+VALUES (
+
+    'game_drawing',
+
+    'Drawing Game',
+
+    'Giới thiệu minigame vẽ và hướng dẫn luật chơi thật đơn giản, kích thích bé tham gia.',
+
+    $$You are Pika, introducing a simple drawing game.
+
+  
+
+Goal:
+
+- Explain the drawing activity in a fun way
+
+- Make sure the child understands what to draw
+
+- Keep instructions very short and clear
+
+  
+
+Context:
+
+- user_name: {{user_name}}
+
+- suggested_theme: {{theme}}   -- e.g. "pets", "superheroes", "dinosaur"
+
+- user_level: {{user_level}}
+
+  
+
+Instruction:
+
+In 2–3 short sentences:
+
+1) Invite the child to play a drawing game.
+
+2) Suggest a theme to draw ({{theme}}).
+
+3) Encourage them with a fun line ("I can’t wait to see it!").$$,
+
+    NULL
+
+);
+
+  
+
+-- GAME: game_adventure
+
+INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, prompt_final)
+
+VALUES (
+
+    'game_adventure',
+
+    'Adventure Quest',
+
+    'Khởi động một trò chơi phiêu lưu chung mang tính "dự án cùng Pika", phù hợp Phase FRIEND.',
+
+    $$You are Pika, starting a cooperative adventure game with the child.
+
+  
+
+Goal:
+
+- Make the child feel like they are on a quest together with Pika
+
+- Set a simple mission for this session
+
+- Encourage imagination and collaboration
+
+  
+
+Context:
+
+- user_name: {{user_name}}
+
+- world_theme: {{world_theme}}         -- e.g. "magic forest", "space", "underwater city"
+
+- current_chapter: {{chapter_number}}  -- e.g. 1, 2, 3...
+
+  
+
+Instruction:
+
+Create an opening line for today’s adventure:
+
+- Mention the world_theme.
+
+- Say which chapter it is.
+
+- Give one clear, simple mission (e.g. "Today we need to find the magic key").
+
+Use warm, exciting tone, but short sentences suitable for a child.$$,
+
+    NULL
+
+);
+
+```
+
+### 7.4 Bảng phụ 2: conversation_events - để hứng conversation from BE send to
+
+```
+
+CREATE TABLE conversation_events (
+
+-- Primary Key
+
+id SERIAL PRIMARY KEY,
+
+-- Identifiers
+
+conversation_id VARCHAR(255) NOT NULL UNIQUE,
+
+user_id VARCHAR(255) NOT NULL,
+
+-- Bot Information
+
+bot_type VARCHAR(50) NOT NULL
+
+CHECK (bot_type IN ('GREETING', 'TALK', 'GAME_ACTIVITY')),
+
+bot_id VARCHAR(255) NOT NULL,
+
+bot_name VARCHAR(255) NOT NULL,
+
+-- Conversation Timing
+
+start_time TIMESTAMP NOT NULL,
+
+end_time TIMESTAMP NOT NULL,
+
+duration_seconds INTEGER GENERATED ALWAYS AS (
+
+EXTRACT(EPOCH FROM (end_time - start_time))::INTEGER
+
+) STORED,
+
+-- Conversation Data
+
+conversation_log JSONB NOT NULL DEFAULT '[]',
+
+-- Status tracking
+
+status VARCHAR(50) NOT NULL DEFAULT 'PENDING'
+
+CHECK (status IN ('PENDING', 'PROCESSING', 'PROCESSED', 'FAILED', 'SKIPPED')),
+
+attempt_count INTEGER NOT NULL DEFAULT 0,
+
+-- Timing for processing
+
+created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+next_attempt_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP + INTERVAL '6 hours',
+
+processed_at TIMESTAMP,
+
+-- Error tracking (only when FAILED)
+
+error_code VARCHAR(50),
+
+error_details TEXT,
+
+-- Processing results
+
+friendship_score_change FLOAT,
+
+new_friendship_level VARCHAR(50),
+
+-- Timestamps
+
+updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+
+);
+
+  
+
+-- Indexes for efficient querying
+
+CREATE INDEX idx_conversation_events_status ON conversation_events(status);
+
+CREATE INDEX idx_conversation_events_next_attempt ON conversation_events(next_attempt_at);
+
+CREATE INDEX idx_conversation_events_user_id ON conversation_events(user_id);
+
+CREATE INDEX idx_conversation_events_created_at ON conversation_events(created_at);
+
+CREATE INDEX idx_conversation_events_bot_type ON conversation_events(bot_type);
+
+CREATE INDEX idx_conversation_events_bot_id ON conversation_events(bot_id);
+
+  
+
+-- Composite index for common queries
+
+CREATE INDEX idx_conversation_events_status_next_attempt
+
+ON conversation_events(status, next_attempt_at);
+
+  
+
+-- GIN index for JSONB queries
+
+CREATE INDEX idx_conversation_events_log_gin
+
+ON conversation_events USING GIN (conversation_log);
+
+  
+
+```
+
+##### Columns Chi Tiết
+
+| Column                      | Type         | Mô Tả                                             | Ghi Chú                 |
+| :-------------------------- | :----------- | :-------------------------------------------------- | :----------------------- |
+| `id`                      | SERIAL       | Primary key                                         | Auto-increment           |
+| `conversation_id`         | VARCHAR(255) | ID conversation                                     | UNIQUE, required         |
+| `user_id`                 | VARCHAR(255) | ID user                                             | Required, indexed        |
+| `bot_type`                | VARCHAR(50)  | GREETING / TALK / GAME_ACTIVITY                     | Required, checked        |
+| `bot_id`                  | VARCHAR(255) | ID của bot                                         | Required                 |
+| `bot_name`                | VARCHAR(255) | Tên của bot                                       | Required                 |
+| `start_time`              | TIMESTAMP    | Thời điểm bắt đầu                             | Required                 |
+| `end_time`                | TIMESTAMP    | Thời điểm kết thúc                             | Required                 |
+| `duration_seconds`        | INTEGER      | Thời lượng (giây)                               | Generated, calculated    |
+| `conversation_log`        | JSONB        | Toàn bộ log conversation                          | Required, default: []    |
+| `status`                  | VARCHAR(50)  | PENDING / PROCESSING / PROCESSED / FAILED / SKIPPED | Default: PENDING         |
+| `attempt_count`           | INTEGER      | Số lần đã xử lý                               | Default: 0, max: 5       |
+| `created_at`              | TIMESTAMP    | Khi được lưu                                    | Auto                     |
+| `next_attempt_at`         | TIMESTAMP    | Thời điểm xử lý tiếp theo                     | Default: created_at + 6h |
+| `processed_at`            | TIMESTAMP    | Khi xử lý thành công                            | Null nếu chưa          |
+| `error_code`              | VARCHAR(50)  | Code lỗi                                           | Null nếu thành công   |
+| `error_details`           | TEXT         | Chi tiết lỗi                                      | Null nếu thành công   |
+| `friendship_score_change` | FLOAT        | Điểm thay đổi                                   | Null nếu chưa xử lý  |
+| `new_friendship_level`    | VARCHAR(50)  | Level mới                                          | Null nếu chưa xử lý  |
+| `updated_at`              | TIMESTAMP    | Cập nhật lần cuối                               | Auto                     |
+
+```
+### Ví dụ 1: PENDING Status
+
+```json
+{
+  "id": 1,
+  "conversation_id": "conv_abc123xyz",
+  "user_id": "user_123",
+  "bot_type": "TALK",
+  "bot_id": "talk_movie_preference",
+  "bot_name": "Movie Preference",
+  "start_time": "2025-11-25T18:00:00Z",
+  "end_time": "2025-11-25T18:20:00Z",
+  "duration_seconds": 1200,
+  "conversation_log": [
+    {
+      "turn_id": 1,
+      "speaker": "bot",
+      "text": "What's your favorite movie genre?",
+      "timestamp": "2025-11-25T18:00:05Z"
+    },
+    {
+      "turn_id": 2,
+      "speaker": "user",
+      "text": "I love anime, especially Studio Ghibli",
+      "timestamp": "2025-11-25T18:00:15Z"
+    },
+    {
+      "turn_id": 3,
+      "speaker": "bot",
+      "text": "Oh, Studio Ghibli is amazing! Have you seen Spirited Away?",
+      "timestamp": "2025-11-25T18:00:25Z"
+    }
+  ],
+  "status": "PENDING",
+  "attempt_count": 0,
+  "created_at": "2025-11-25T18:30:00Z",
+  "next_attempt_at": "2025-11-26T00:30:00Z",
+  "processed_at": null,
+  "error_code": null,
+  "error_details": null,
+  "friendship_score_change": null,
+  "new_friendship_level": null,
+  "updated_at": "2025-11-25T18:30:00Z"
+}
+```
 
 ## 8. Define Folder Structure SOLID (Đơn giản nhưng Mạnh)
 
@@ -872,95 +1498,161 @@ VALUES
 ```
 context-handling-service/
 │
-├── README.md
-├── .env.example
-├── requirements.txt
-├── Dockerfile
-├── docker-compose.yml
-├── pyproject.toml
+├── README.md                                    # Tài liệu chính của project
+├── .env.example                                 # Template environment variables
+├── .gitignore                                   # Git ignore file
+├── requirements.txt                             # Python dependencies
+├── pyproject.toml                               # Project configuration
+├── Dockerfile                                   # Docker image definition
+├── docker-compose.yml                           # Docker compose for local dev
 │
-├── app/
+├── app/                                         # Main application package
 │   ├── __init__.py
 │   │
-│   ├── core/                          # Cấu hình, constants, exceptions
+│   ├── core/                                    # Core configuration & constants
 │   │   ├── __init__.py
-│   │   ├── config.py                  # Settings, environment variables
-│   │   ├── constants.py               # Constants, enums
-│   │   └── exceptions.py              # Custom exceptions
+│   │   ├── config_settings.py                   # ✅ Settings & environment variables
+│   │   ├── constants_enums.py                   # ✅ Constants & enums (FriendshipLevel, AgentType, etc.)
+│   │   ├── exceptions_custom.py                 # ✅ Custom exceptions (FriendshipNotFoundError, etc.)
+│   │   └── status_codes.py                      # ✅ HTTP status codes & error messages
 │   │
-│   ├── models/                        # Database models (SQLAlchemy)
+│   ├── models/                                  # SQLAlchemy ORM models
 │   │   ├── __init__.py
-│   │   ├── base.py                    # Base model class
-│   │   ├── friendship.py              # FriendshipStatus model
-│   │   └── agent.py                   # FriendshipAgentMapping model
+│   │   ├── base_model.py                        # ✅ Base model class with common fields
+│   │   ├── friendship_status_model.py           # ✅ FriendshipStatus table model
+│   │   ├── friendship_agent_mapping_model.py    # ✅ FriendshipAgentMapping table model
+│   │   └── conversation_model.py                # ✅ Conversation table model (if needed)
 │   │
-│   ├── schemas/                       # Pydantic schemas (request/response)
+│   ├── schemas/                                 # Pydantic request/response schemas
 │   │   ├── __init__.py
-│   │   ├── friendship.py              # Friendship schemas
-│   │   ├── agent.py                   # Agent schemas
-│   │   └── common.py                  # Common schemas
+│   │   ├── friendship_status_schemas.py         # ✅ FriendshipStatus request/response
+│   │   ├── friendship_agent_mapping_schemas.py  # ✅ AgentMapping request/response
+│   │   ├── activity_suggestion_schemas.py       # ✅ Activity suggestion request/response
+│   │   ├── conversation_end_schemas.py          # ✅ Conversation end event schema
+│   │   └── common_schemas.py                    # ✅ Common schemas (error responses, etc.)
 │   │
-│   ├── db/                            # Database layer
+│   ├── db/                                      # Database layer
 │   │   ├── __init__.py
-│   │   ├── database.py                # Database connection, session
-│   │   └── base_repository.py         # Base repository class
+│   │   ├── database_connection.py               # ✅ Database connection & SessionLocal
+│   │   ├── base_repository.py                   # ✅ Base repository class (generic CRUD)
+│   │   └── database_migrations.py               # ✅ Migration utilities
 │   │
-│   ├── repositories/                  # Data access layer (Repository pattern)
+│   ├── repositories/                            # Data access layer (Repository pattern)
 │   │   ├── __init__.py
-│   │   ├── friendship_repository.py   # Friendship data access
-│   │   └── agent_repository.py        # Agent mapping data access
+│   │   ├── friendship_status_repository.py      # ✅ FriendshipStatus CRUD operations
+│   │   ├── friendship_agent_mapping_repository.py # ✅ AgentMapping CRUD operations
+│   │   └── conversation_repository.py           # ✅ Conversation lookup operations
 │   │
-│   ├── services/                      # Business logic layer
+│   ├── services/                                # Business logic layer
 │   │   ├── __init__.py
-│   │   ├── friendship_service.py      # Friendship logic
-│   │   └── selection_service.py       # Agent selection logic
+│   │   ├── friendship_score_calculation_service.py  # ✅ Calculate friendship score change
+│   │   ├── friendship_status_update_service.py      # ✅ Update friendship status in DB
+│   │   ├── topic_metrics_update_service.py          # ✅ Update topic metrics
+│   │   ├── agent_selection_algorithm_service.py     # ✅ Select agents (greeting, talk, game)
+│   │   ├── activity_suggestion_service.py           # ✅ Suggest activities for user
+│   │   └── conversation_data_fetch_service.py       # ✅ Fetch conversation data by ID
 │   │
-│   ├── api/                           # API routes
+│   ├── tasks/                                   # Background tasks & async jobs
 │   │   ├── __init__.py
-│   │   ├── deps.py                    # Dependency injection
-│   │   └── v1/
+│   │   ├── process_conversation_end_task.py     # ✅ Background task: process conversation end
+│   │   ├── batch_recompute_candidates_task.py   # ✅ Scheduled task: batch recompute (6h)
+│   │   └── retry_failed_processing_task.py      # ✅ Retry mechanism for failed tasks
+│   │
+│   ├── cache/                                   # Caching layer
+│   │   ├── __init__.py
+│   │   ├── redis_cache_manager.py               # ✅ Redis cache operations
+│   │   ├── cache_keys_builder.py                # ✅ Build cache keys (candidates:{user_id})
+│   │   └── cache_invalidation_handler.py        # ✅ Invalidate cache when needed
+│   │
+│   ├── api/                                     # API routes & endpoints
+│   │   ├── __init__.py
+│   │   ├── dependency_injection.py              # ✅ Dependency injection setup
+│   │   │
+│   │   └── v1/                                  # API v1
 │   │       ├── __init__.py
-│   │       ├── endpoints/
-│   │       │   ├── __init__.py
-│   │       │   ├── friendship.py      # Friendship endpoints
-│   │       │   ├── agents.py          # Agent endpoints
-│   │       │   └── health.py          # Health check
-│   │       └── router.py              # API router
+│   │       ├── router_v1_main.py                # ✅ Main router for v1
+│   │       │
+│   │       └── endpoints/
+│   │           ├── __init__.py
+│   │           ├── endpoint_conversations_end.py        # ✅ POST /conversations/end
+│   │           ├── endpoint_conversations_get.py        # ✅ GET /conversations/{id}
+│   │           ├── endpoint_friendship_status.py        # ✅ POST /friendship/status
+│   │           ├── endpoint_friendship_update.py        # ✅ POST /friendship/update
+│   │           ├── endpoint_activities_suggest.py       # ✅ POST /activities/suggest
+│   │           ├── endpoint_agent_mappings_list.py      # ✅ GET /agent-mappings
+│   │           ├── endpoint_agent_mappings_create.py    # ✅ POST /agent-mappings
+│   │           ├── endpoint_agent_mappings_update.py    # ✅ PUT /agent-mappings/{id}
+│   │           ├── endpoint_agent_mappings_delete.py    # ✅ DELETE /agent-mappings/{id}
+│   │           └── endpoint_health_check.py             # ✅ GET /health
 │   │
-│   ├── utils/                         # Utility functions
+│   ├── utils/                                   # Utility functions & helpers
 │   │   ├── __init__.py
-│   │   ├── logger.py                  # Logging setup
-│   │   ├── validators.py              # Input validators
-│   │   └── helpers.py                 # Helper functions
+│   │   ├── logger_setup.py                      # ✅ Logging configuration & setup
+│   │   ├── input_validators.py                  # ✅ Input validation functions
+│   │   ├── helper_functions.py                  # ✅ General helper functions
+│   │   ├── weighted_random_selection.py         # ✅ Weighted random selection algorithm
+│   │   └── datetime_utilities.py                # ✅ DateTime utilities
 │   │
-│   └── main.py                        # FastAPI app entry point
+│   └── main_app.py                              # ✅ FastAPI app entry point
 │
-├── migrations/                        # Alembic migrations
-│   ├── env.py
-│   ├── script.py.mako
+├── migrations/                                  # Alembic database migrations
+│   ├── env.py                                   # ✅ Alembic environment config
+│   ├── script.py.mako                           # ✅ Migration template
+│   │
 │   └── versions/
-│       ├── 001_create_friendship_status_table.py
-│       └── 002_create_friendship_agent_mapping_table.py
-│
-├── scripts/                           # Utility scripts
-│   ├── __init__.py
-│   ├── seed_agents.py                 # Seed agent data
-│   └── init_db.py                     # Initialize database
-│
-├── tests/                             # Tests
-│   ├── __init__.py
-│   ├── conftest.py                    # Pytest configuration
-│   ├── unit/
-│   │   ├── __init__.py
-│   │   ├── test_friendship_service.py
-│   │   └── test_selection_service.py
-│   └── integration/
 │       ├── __init__.py
-│       ├── test_friendship_api.py
-│       └── test_agent_api.py
+│       ├── 001_create_friendship_status_table.py        # ✅ Migration: Create friendship_status
+│       ├── 002_create_friendship_agent_mapping_table.py # ✅ Migration: Create agent_mapping
+│       └── 003_add_indexes_and_constraints.py           # ✅ Migration: Add indexes
 │
-└── logs/
-    └── .gitkeep
+├── scripts/                                     # Utility scripts
+│   ├── __init__.py
+│   ├── script_seed_agent_data.py                # ✅ Seed initial agent data
+│   ├── script_initialize_database.py            # ✅ Initialize database (create tables, seed)
+│   ├── script_reset_database.py                 # ✅ Reset database (drop all tables)
+│   └── script_generate_sample_data.py           # ✅ Generate sample data for testing
+│
+├── tests/                                       # Test suite
+│   ├── __init__.py
+│   ├── conftest_pytest_config.py                # ✅ Pytest configuration & fixtures
+│   │
+│   ├── unit/                                    # Unit tests
+│   │   ├── __init__.py
+│   │   ├── test_friendship_score_calculation.py # ✅ Test score calculation algorithm
+│   │   ├── test_topic_metrics_update.py         # ✅ Test topic metrics update
+│   │   ├── test_agent_selection_algorithm.py    # ✅ Test agent selection algorithm
+│   │   ├── test_friendship_status_repository.py # ✅ Test repository methods
+│   │   └── test_input_validators.py             # ✅ Test input validation
+│   │
+│   ├── integration/                             # Integration tests
+│   │   ├── __init__.py
+│   │   ├── test_api_conversations_end.py        # ✅ Test POST /conversations/end
+│   │   ├── test_api_friendship_status.py        # ✅ Test POST /friendship/status
+│   │   ├── test_api_activities_suggest.py       # ✅ Test POST /activities/suggest
+│   │   ├── test_api_agent_mappings_crud.py      # ✅ Test agent mappings CRUD
+│   │   └── test_end_to_end_flow.py              # ✅ Test complete flow
+│   │
+│   └── fixtures/                                # Test fixtures & sample data
+│       ├── __init__.py
+│       ├── fixture_friendship_data.py           # ✅ Friendship test data
+│       ├── fixture_agent_data.py                # ✅ Agent test data
+│       └── fixture_conversation_data.py         # ✅ Conversation test data
+│
+├── logs/                                        # Application logs
+│   └── .gitkeep
+│
+├── docs/                                        # Documentation
+│   ├── API_SPECIFICATION.md                     # ✅ API specification
+│   ├── DATABASE_SCHEMA.md                       # ✅ Database schema documentation
+│   ├── ARCHITECTURE.md                          # ✅ Architecture documentation
+│   ├── SETUP_GUIDE.md                           # ✅ Setup & installation guide
+│   └── DEPLOYMENT_GUIDE.md                      # ✅ Deployment guide
+│
+└── config/                                      # Configuration files
+    ├── logging_config.yaml                      # ✅ Logging configuration
+    ├── database_config.yaml                     # ✅ Database configuration
+    └── cache_config.yaml                        # ✅ Cache configuration
+
 ```
 
 ### 8.2. Giải thích Chi tiết
@@ -1153,10 +1845,10 @@ class FriendshipService:
         """Tính toán điểm từ log"""
         total_turns = len(request.conversation_log)
         user_initiated = sum(1 for msg in request.conversation_log if msg.speaker == "user")
-      
+    
         base_score = total_turns * 0.5
         engagement_bonus = user_initiated * 3
-      
+    
         return CalculateFriendshipResponse(
             friendship_score_change=base_score + engagement_bonus
         )
@@ -1297,9 +1989,7 @@ PHASE 2: ASYNC PROCESSING (AI Service)
 ═════════════════════════════════════════════════════════════════════════════
 
 4. AI Scoring Service (Background Worker)
-   └─> Consume event từ queue
-   └─> API 2: GET /conversations/{conversation_id}
-       (Call BE để lấy conversation data)
+   └─> 
    
 5. AI Service
    └─> Mổ xẻ conversation log
@@ -1412,7 +2102,7 @@ Content-Type: application/json
 ```json
 {
   "user_id": "user_123",
-  "conversation_id": "conv_doanngoccuong",
+  "conversation_id": "conv_abc123xyz",
   "session_metadata": {
     "duration_seconds": 1200,
     "agent_type": "talk"
@@ -1435,7 +2125,7 @@ curl -X POST http://localhost:8000/v1/conversations/end \
   -H "Content-Type: application/json" \
   -d '{
     "user_id": "user_123",
-    "conversation_id": "conv_doanngoccuong",
+    "conversation_id": "conv_abc123xyz",
     "session_metadata": {
       "duration_seconds": 1200,
       "agent_type": "talk"
@@ -1450,7 +2140,7 @@ curl -X POST http://localhost:8000/v1/conversations/end \
   "status": "accepted",
   "message": "Conversation end event received and queued for processing",
   "user_id": "user_123",
-  "conversation_id": "conv_doanngoccuong",
+  "conversation_id": "conv_abc123xyz",
   "processing_id": "proc_xyz789abc"
 }
 ```
@@ -1498,14 +2188,14 @@ AI Service gọi API này để lấy conversation log, metadata, v.v. để ph�
 #### cURL Example
 
 ```bash
-curl -X GET http://localhost:8000/v1/conversations/conv_doanngoccuong
+curl -X GET http://localhost:8000/v1/conversations/conv_abc123xyz
 ```
 
 #### Response (200 OK)
 
 ```json
 {
-  "conversation_id": "conv_doanngoccuong",
+  "conversation_id": "conv_abc123xyz",
   "user_id": "user_123",
   "agent_id": "talk_movie_preference",
   "agent_type": "talk",
@@ -2017,26 +2707,26 @@ async def consume_conversation_events():
     """Consume events từ message queue"""
     while True:
         event = queue.get()  # Blocking call
-      
+    
         user_id = event.user_id
         conversation_id = event.conversation_id
-      
+    
         try:
             # Step 1: Lấy conversation data từ BE
             conv_data = await get_conversation_data(conversation_id)
-          
+        
             # Step 2: Tính toán điểm
             score_change, topic_updates, memories = calculate_friendship_score(conv_data)
-          
+        
             # Step 3: Update friendship status
             await update_friendship_status(user_id, score_change, topic_updates, memories)
-          
+        
             # Step 4: Compute & cache candidates
             candidates = compute_candidates(user_id)
             await cache_candidates(user_id, candidates)
-          
+        
             logger.info(f"Processed conversation {conversation_id} for user {user_id}")
-          
+        
         except Exception as e:
             logger.error(f"Error processing conversation {conversation_id}: {e}")
             queue.nack(event)  # Requeue for retry
@@ -2068,12 +2758,12 @@ async def batch_recompute_candidates():
         try:
             # Compute candidates dựa trên friendship_level hiện tại
             candidates = compute_candidates(user.user_id)
-          
+        
             # Cache candidates
             await cache_candidates(user.user_id, candidates)
-          
+        
             logger.info(f"Recomputed candidates for user {user.user_id}")
-          
+        
         except Exception as e:
             logger.error(f"Error recomputing candidates for user {user.user_id}: {e}")
   
@@ -2145,7 +2835,7 @@ curl -X POST http://localhost:8000/v1/conversations/end \
   -H "Content-Type: application/json" \
   -d '{
     "user_id": "user_123",
-    "conversation_id": "conv_doanngoccuong",
+    "conversation_id": "conv_abc123xyz",
     "session_metadata": {
       "duration_seconds": 1200,
       "agent_type": "talk"
@@ -2286,4 +2976,154 @@ Frontend/App
 
 ---
 
+## 10. API Implement
+
+###1. Health check
+
+```
+curl -X 'GET' \
+  'http://localhost:30020/v1/health' \
+  -H 'accept: application/json'
+```
+
+### 2. From conversation_id -> calculate score -> update friendship_status:
+
+```
+###### 2.1 Test GET conversation
+curl -X GET "http://localhost:8000/v1/conversations/conv_id_2003doanngoccuong" \
+  -H "Content-Type: application/json"
+
+###### 2.2 Test POST calculate score
+curl -X POST "http://localhost:8000/v1/friendship_status/calculate-score/conv_id_2003doanngoccuong" \
+  -H "Content-Type: application/json"
+
+###### 2.3 Test POST update friendship_status
+curl -X POST "http://localhost:8000/v1/friendship_status/calculate-score-and-update" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "user_doanngoccuong",
+    "conversation_id": "conv_id_2003doanngoccuong"
+  }'
+```
+
+### 3. From user_id -> get suggested activities:
+
+```
+curl -X POST "http://localhost:8000/v1/activities/suggest" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "user_doanngoccuong"
+  }'
+```
+
+### 4. Trigger conversation_events:
+
+```
+curl -X 'POST' \
+  'http://localhost:30022/v1/conversations/end' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "bot_id": "talk_movie_preference",
+  "bot_name": "Movie Preference Talk",
+  "bot_type": "TALK",
+  "conversation_id": "conv_20251126_001",
+  "conversation_log": [
+    {
+      "speaker": "pika",
+      "text": "Hello! Ready to talk about movies?",
+      "timestamp": "2025-11-26T10:00:00Z",
+      "turn_id": 1
+    }
+  ],
+  "end_time": "2025-11-26T10:20:00Z",
+  "start_time": "2025-11-26T10:00:00Z",
+  "status": "PENDING",
+  "user_id": "user_doanngoccuong"
+}'
+```
+
+```
+{
+  "success": true,
+  "message": "Conversation event accepted for processing",
+  "data": {
+    "id": 1,
+    "conversation_id": "conv_20251126_001",
+    "user_id": "user_doanngoccuong",
+    "bot_type": "TALK",
+    "bot_id": "talk_movie_preference",
+    "bot_name": "Movie Preference Talk",
+    "start_time": "2025-11-26T10:00:00",
+    "end_time": "2025-11-26T10:20:00",
+    "duration_seconds": 1200,
+    "conversation_log": [
+      {
+        "speaker": "pika",
+        "turn_id": 1,
+        "text": "Hello! Ready to talk about movies?",
+        "timestamp": "2025-11-26T10:00:00Z"
+      }
+    ],
+    "status": "PENDING",
+    "attempt_count": 0,
+    "created_at": "2025-11-26T10:34:25.329741",
+    "next_attempt_at": "2025-11-26T16:34:28.039026",
+    "processed_at": null,
+    "error_code": null,
+    "error_details": null,
+    "friendship_score_change": null,
+    "new_friendship_level": null,
+    "updated_at": "2025-11-26T10:34:25.329741"
+  }
+}
+
+```
+
+```
+curl -X 'POST' \
+  'http://localhost:30022/v1/conversations/end' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+
+  "conversation_id": "conv_20251126_005",
+  "user_id": "user_doanngoccuong",
+  "bot_id": "talk_movie_preference",
+  "bot_name": "Movie Preference Talk",
+  "bot_type": "TALK",
+  "conversation_log": [
+   
+  ],
+  "end_time": "2025-11-26T10:20:00Z",
+  "start_time": "2025-11-26T10:00:00Z"
+}'
+
+```
+
+```
+
+curl -X 'POST' \
+  'http://localhost:30022/v1/conversations/end' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+
+  "conversation_id": "conv_20251126_005",
+  "user_id": "user_doanngoccuong",
+  "bot_id": "talk_movie_preference",
+  "bot_name": "Movie Preference Talk",
+  "bot_type": "TALK",
+  "conversation_log": [
+   
+  ],
+  "end_time": "2025-11-26T10:20:00Z",
+  "start_time": "2025-11-26T10:00:00Z", 
+  "status": "PENDING"
+}'
+
+
+---
+
 **Kết luận:** Tài liệu này cung cấp một kế hoạch triển khai kỹ thuật toàn diện cho module **Context Handling - Friendlyship Management**, chuyển đổi hệ thống sang mô hình cập nhật thời gian thực để tạo ra một trải nghiệm người dùng linh hoạt và cá nhân hóa hơn. Các API và cấu trúc dữ liệu được định nghĩa rõ ràng để đảm bảo sự phối hợp nhịp nhàng giữa Backend, AI và Database.
+```

@@ -49,7 +49,8 @@ CACHE_KEY_PREFIX_CANDIDATES = "candidates"
 CACHE_KEY_PREFIX_FRIENDSHIP = "friendship"
 
 # Conversation event processing defaults
-CONVERSATION_EVENT_RETRY_HOURS = 6
+# CONVERSATION_EVENT_RETRY_MINUTES = 1/60  # retry after 1 minute
+CONVERSATION_EVENT_RETRY_HOURS = 1/6000  # retry immediately
 
 
 

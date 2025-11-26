@@ -50,3 +50,6 @@ class CandidatesCacheManager:
         self.redis.delete(key)
 
 
+
+
+

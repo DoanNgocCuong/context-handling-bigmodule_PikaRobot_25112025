@@ -6,6 +6,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config_settings import settings
 from app.api.v1.router_v1_main import router as v1_router
+from app.background.conversation_event_scheduler import (
+    shutdown_background_jobs,
+    start_background_jobs,
+)
 from app.utils.logger_setup import get_logger
 
 logger = get_logger(__name__)
@@ -38,6 +42,7 @@ async def startup_event():
     logger.info(f"Starting {settings.PROJECT_NAME} v{settings.PROJECT_VERSION}")
     logger.info(f"Environment: {settings.ENVIRONMENT}")
     logger.info(f"API available at: http://{settings.API_HOST}:{settings.API_PORT}")
+    start_background_jobs()
 
 
 @app.on_event("shutdown")
@@ -45,6 +50,7 @@ async def shutdown_event():
     """Shutdown event handler."""
     from app.cache.redis_cache_manager import close_redis_client
     close_redis_client()
+    shutdown_background_jobs()
     logger.info("Application shutdown")
 
 
