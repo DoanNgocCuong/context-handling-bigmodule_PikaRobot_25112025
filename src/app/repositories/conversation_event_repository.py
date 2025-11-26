@@ -41,6 +41,10 @@ class ConversationEventRepository:
         self.db.refresh(event)
         return event
 
+    def get_by_id(self, event_id: int) -> Optional[ConversationEvent]:
+        """Return event by primary key ID."""
+        return self.db.get(self.model, event_id)
+
     def fetch_due_events(self, batch_size: int = 25) -> List[ConversationEvent]:
         """Return pending/failed events whose next_attempt_at has arrived."""
         now = datetime.now(timezone.utc)

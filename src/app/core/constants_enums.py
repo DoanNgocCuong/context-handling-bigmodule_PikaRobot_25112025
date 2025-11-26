@@ -50,7 +50,7 @@ CACHE_KEY_PREFIX_FRIENDSHIP = "friendship"
 
 # Conversation event processing defaults
 # CONVERSATION_EVENT_RETRY_MINUTES = 1/60  # retry after 1 minute
-CONVERSATION_EVENT_RETRY_HOURS = 1/6000  # retry immediately
+CONVERSATION_EVENT_RETRY_HOURS = 6  # retry after 6 hours
 
 
 

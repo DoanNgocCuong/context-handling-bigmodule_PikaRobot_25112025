@@ -1,7 +1,7 @@
 """
 Service that scans pending conversation events and processes them.
 """
-from typing import Dict
+from typing import Dict, Optional
 
 from sqlalchemy.orm import Session
 
@@ -33,6 +33,51 @@ class ConversationEventProcessingService:
         self.repository = ConversationEventRepository(db)
         self.score_service = score_service
         self.status_update_service = status_update_service
+
+    def process_single_event(self, event_id: int) -> Optional[Dict[str, int]]:
+        """
+        Process a single conversation event by ID.
+
+        Returns optional stats dict for consistency with batch method.
+        """
+        event = self.repository.get_by_id(event_id)
+        if not event:
+            logger.warning("Conversation event not found for id=%s", event_id)
+            return None
+
+        stats = {"processed": 0, "failed": 0, "total": 1}
+        logger.info(
+            "Processing single conversation event conversation_id=%s attempt=%s",
+            event.conversation_id,
+            (event.attempt_count or 0) + 1,
+        )
+        self.repository.mark_processing(event)
+        try:
+            calc_result = self.score_service.calculate_score_from_conversation_id(
+                event.conversation_id
+            )
+            status = self.status_update_service.apply_score_change(
+                user_id=event.user_id,
+                score_change=calc_result["friendship_score_change"],
+            )
+
+            self.repository.mark_processed(
+                event=event,
+                friendship_score_change=calc_result["friendship_score_change"],
+                friendship_level=status["friendship_level"],
+            )
+            stats["processed"] = 1
+        except ConversationNotFoundError as exc:
+            self._handle_failure(event, "CONVERSATION_NOT_FOUND", str(exc))
+            stats["failed"] = 1
+        except InvalidScoreError as exc:
+            self._handle_failure(event, "INVALID_SCORE", str(exc))
+            stats["failed"] = 1
+        except Exception as exc:  # pragma: no cover
+            self._handle_failure(event, "UNEXPECTED_ERROR", str(exc))
+            stats["failed"] = 1
+
+        return stats
 
     def process_due_events(self, batch_size: int = 20) -> Dict[str, int]:
         """

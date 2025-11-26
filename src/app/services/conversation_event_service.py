@@ -17,6 +17,14 @@ from app.core.exceptions_custom import (
 )
 from app.repositories.conversation_event_repository import ConversationEventRepository
 from app.schemas.conversation_event_schemas import ConversationEventCreateRequest
+from app.services.conversation_data_fetch_service import ConversationDataFetchService
+from app.services.conversation_event_processing_service import (
+    ConversationEventProcessingService,
+)
+from app.services.friendship_score_calculation_service import (
+    FriendshipScoreCalculationService,
+)
+from app.services.friendship_status_update_service import FriendshipStatusUpdateService
 from app.utils.logger_setup import get_logger
 
 logger = get_logger(__name__)
@@ -63,6 +71,32 @@ class ConversationEventService:
             ) from exc
 
         logger.info("Conversation event stored for conversation_id=%s", event.conversation_id)
+
+        # Immediately trigger processing for this single event (primary path).
+        try:
+            conversation_fetch_service = ConversationDataFetchService(
+                conversation_repository=None,
+                external_api_client=None,
+            )
+            score_service = FriendshipScoreCalculationService(
+                conversation_fetch_service=conversation_fetch_service
+            )
+            status_service = FriendshipStatusUpdateService(self.db)
+            processor = ConversationEventProcessingService(
+                db=self.db,
+                score_service=score_service,
+                status_update_service=status_service,
+            )
+            processor.process_single_event(event.id)
+        except Exception as exc:  # pragma: no cover - defensive
+            # Do not fail API; fallback scheduler will retry pending events.
+            logger.error(
+                "Immediate processing for conversation_id=%s failed: %s",
+                event.conversation_id,
+                exc,
+                exc_info=True,
+            )
+
         return self._serialize(event)
 
     @staticmethod
