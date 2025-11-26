@@ -40,3 +40,4 @@ CACHE_KEY_PREFIX_CANDIDATES = "candidates"
 CACHE_KEY_PREFIX_FRIENDSHIP = "friendship"
 
 
+

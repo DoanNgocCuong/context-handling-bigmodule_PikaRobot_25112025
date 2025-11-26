@@ -26,26 +26,64 @@ CREATE INDEX idx_updated_at ON friendship_status(updated_at DESC);
 
 
 --- friendship_agent_mapping
-
-
 CREATE TABLE friendship_agent_mapping (
     id SERIAL PRIMARY KEY,
     friendship_level VARCHAR(50) NOT NULL,
     -- STRANGER, ACQUAINTANCE, FRIEND
+
     agent_type VARCHAR(50) NOT NULL,
     -- GREETING, TALK, GAME_ACTIVITY
+
+    topic VARCHAR(100),
+    -- Chủ đề gắn với agent: ví dụ 'pets', 'school', 'movie'
+
     agent_id VARCHAR(255) NOT NULL,
     agent_name VARCHAR(255) NOT NULL,
     agent_description TEXT,
+
     weight FLOAT DEFAULT 1.0,
     -- Trọng số ưu tiên (cao hơn = được chọn nhiều hơn)
+
     is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(friendship_level, agent_type, agent_id)
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE (friendship_level, agent_type, agent_id)
 );
 
--- Indexes
-CREATE INDEX idx_mapping_level_type ON friendship_agent_mapping(friendship_level, agent_type);
-CREATE INDEX idx_mapping_active ON friendship_agent_mapping(is_active);
+CREATE INDEX idx_mapping_level_type
+ON friendship_agent_mapping(friendship_level, agent_type);
 
+CREATE INDEX idx_mapping_active
+ON friendship_agent_mapping(is_active);
+
+CREATE INDEX idx_mapping_topic
+ON friendship_agent_mapping(topic);
+
+
+
+--- agent_prompting table
+
+CREATE TABLE agent_prompting (
+    id SERIAL PRIMARY KEY,
+
+    agent_id VARCHAR(255) NOT NULL,
+    agent_name VARCHAR(255) NOT NULL,
+
+    goal TEXT NOT NULL,
+    -- Mục tiêu sư phạm / hành vi của agent
+
+    prompt_template TEXT NOT NULL,
+    -- Prompt "thô" có placeholder, ví dụ: {{user_name}}, {{topic}}
+
+    prompt_final TEXT,
+    -- Prompt đã compile / cache sẵn (optional, có thể null)
+
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE (agent_id)
+);
+
+CREATE INDEX idx_agent_prompting_agent_id
+ON agent_prompting(agent_id);

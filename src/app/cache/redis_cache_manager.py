@@ -57,3 +57,4 @@ def close_redis_client():
         logger.info("Redis client closed")
 
 
+

@@ -15,3 +15,26 @@ curl http://localhost:8000/v1/health
 # Or use test script
 python test_health.py
 ```
+
+
+----
+
+1. Health check
+```
+curl -X 'GET' \
+  'http://localhost:30020/v1/health' \
+  -H 'accept: application/json'
+```
+
+2. Tính điểm: 
+```
+# Test GET conversation
+curl -X GET "http://localhost:8000/v1/conversations/conv_id_2003doanngoccuong" \
+  -H "Content-Type: application/json"
+
+# Test POST calculate score
+curl -X POST "http://localhost:8000/v1/friendship/calculate-score/conv_id_2003doanngoccuong" \
+  -H "Content-Type: application/json"
+```
+
+

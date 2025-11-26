@@ -610,7 +610,7 @@ Content-Type: application/json
 ```json
 {
   "user_id": "user_123",
-  "conversation_id": "conv_abc123xyz",
+  "conversation_id": "conv_doanngoccuong",
   "session_metadata": {
     "duration_seconds": 1200,
     "agent_type": "talk"
@@ -633,7 +633,7 @@ curl -X POST http://localhost:8000/v1/conversations/end \
   -H "Content-Type: application/json" \
   -d '{
     "user_id": "user_123",
-    "conversation_id": "conv_abc123xyz",
+    "conversation_id": "conv_doanngoccuong",
     "session_metadata": {
       "duration_seconds": 1200,
       "agent_type": "talk"
@@ -648,7 +648,7 @@ curl -X POST http://localhost:8000/v1/conversations/end \
   "status": "accepted",
   "message": "Conversation end event received and queued for processing",
   "user_id": "user_123",
-  "conversation_id": "conv_abc123xyz",
+  "conversation_id": "conv_doanngoccuong",
   "processing_id": "proc_xyz789abc"
 }
 ```
@@ -696,14 +696,14 @@ AI Service gọi API này để lấy conversation log, metadata, v.v. để ph�
 #### cURL Example
 
 ```bash
-curl -X GET http://localhost:8000/v1/conversations/conv_abc123xyz
+curl -X GET http://localhost:8000/v1/conversations/conv_doanngoccuong
 ```
 
 #### Response (200 OK)
 
 ```json
 {
-  "conversation_id": "conv_abc123xyz",
+  "conversation_id": "conv_doanngoccuong",
   "user_id": "user_123",
   "agent_id": "talk_movie_preference",
   "agent_type": "talk",
@@ -1343,7 +1343,7 @@ curl -X POST http://localhost:8000/v1/conversations/end \
   -H "Content-Type: application/json" \
   -d '{
     "user_id": "user_123",
-    "conversation_id": "conv_abc123xyz",
+    "conversation_id": "conv_doanngoccuong",
     "session_metadata": {
       "duration_seconds": 1200,
       "agent_type": "talk"
