@@ -59,14 +59,19 @@ async def create_conversation_event(
         # STEP 1: Create event (save to DB, status=PENDING)
         logger.debug(f"💾 Saving conversation event to DB: {conversation_id}")
         data = service.create_event(request)
+        
+        # Lấy conversation_id cuối cùng (có thể đã được modify nếu duplicate)
+        final_conversation_id = data.get("conversation_id", conversation_id)
+        
         logger.info(
             f"{success('✅ Saved to DB')} | "
-            f"{key_value('conversation_id', conversation_id)} | "
+            f"{key_value('conversation_id', final_conversation_id)} | "
+            f"{key_value('original_id', conversation_id if final_conversation_id != conversation_id else 'same')} | "
             f"{key_value('event_id', str(data.get('id')))}"
         )
         
         # STEP 2: Publish to RabbitMQ queue for async processing
-        logger.debug(f"📤 Publishing to RabbitMQ queue: {conversation_id}")
+        logger.debug(f"📤 Publishing to RabbitMQ queue: {final_conversation_id}")
         try:
             await publish_conversation_event(
                 conversation_id=data["conversation_id"],
@@ -76,7 +81,7 @@ async def create_conversation_event(
             )
             logger.info(
                 f"{success('✅ Published to queue')} | "
-                f"{key_value('conversation_id', conversation_id)}"
+                f"{key_value('conversation_id', final_conversation_id)}"
             )
         except Exception as publish_error:
             # Don't fail API if publish fails - background scheduler will retry
@@ -90,7 +95,7 @@ async def create_conversation_event(
         # STEP 3: Return 202 Accepted immediately
         logger.info(
             f"{success('✅')} {status_code(202)} Accepted | "
-            f"{key_value('conversation_id', conversation_id)} | "
+            f"{key_value('conversation_id', final_conversation_id)} | "
             f"{key_value('response_time', '<100ms (async processing)')}"
         )
         return ConversationEventCreateResponse(

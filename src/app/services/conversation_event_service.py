@@ -3,6 +3,7 @@ Service layer for conversation event operations.
 """
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict
+from zoneinfo import ZoneInfo
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -35,6 +36,20 @@ from app.utils.conversation_log_transform import (
 logger = get_logger(__name__)
 
 
+def _generate_timestamp_suffix() -> str:
+    """
+    Generate timestamp suffix in format _YYYYMMDD_HHMMSS.
+    Sử dụng múi giờ Hà Nội, Việt Nam (UTC+7).
+    
+    Returns:
+        String suffix like "_20251128_032315" (theo giờ Việt Nam)
+    """
+    # Sử dụng múi giờ Hà Nội, Việt Nam (Asia/Ho_Chi_Minh = UTC+7)
+    vietnam_tz = ZoneInfo("Asia/Ho_Chi_Minh")
+    now = datetime.now(vietnam_tz)
+    return now.strftime("_%Y%m%d_%H%M%S")
+
+
 class ConversationEventService:
     """Orchestrates validation and persistence for conversation events."""
 
@@ -45,19 +60,63 @@ class ConversationEventService:
     def create_event(self, request: ConversationEventCreateRequest) -> Dict[str, Any]:
         """
         Store a new conversation event.
+        
+        Nếu conversation_id đã tồn tại, tự động thêm suffix timestamp (_YYYYMMDD_HHMMSS)
+        và retry insert với conversation_id mới.
 
         Raises:
-            ConversationEventAlreadyExistsError: If conversation_id already stored.
             ConversationEventValidationError: If business validation fails.
         """
-        if self.repository.get_by_conversation_id(request.conversation_id):
-            raise ConversationEventAlreadyExistsError(
-                f"Conversation event already exists for conversation_id={request.conversation_id}"
-            )
-
         duration_seconds = int((request.end_time - request.start_time).total_seconds())
         if duration_seconds <= 0:
             raise ConversationEventValidationError("Conversation duration must be greater than 0 seconds")
+
+        # Kiểm tra và xử lý duplicate conversation_id
+        original_conversation_id = request.conversation_id
+        current_conversation_id = original_conversation_id
+        max_retries = 3
+        retry_count = 0
+        
+        while retry_count < max_retries:
+            # Kiểm tra conversation_id đã tồn tại chưa
+            if self.repository.get_by_conversation_id(current_conversation_id):
+                retry_count += 1
+                if retry_count >= max_retries:
+                    # Nếu đã retry quá nhiều lần, log warning và raise error
+                    logger.warning(
+                        f"{warning('⚠️')} Failed to generate unique conversation_id after {max_retries} attempts | "
+                        f"{key_value('original_id', original_conversation_id)} | "
+                        f"{key_value('last_tried', current_conversation_id)}"
+                    )
+                    raise ConversationEventAlreadyExistsError(
+                        f"Conversation event already exists and cannot generate unique ID after {max_retries} retries. "
+                        f"Original conversation_id={original_conversation_id}"
+                    )
+                
+                # Generate suffix và append vào conversation_id
+                suffix = _generate_timestamp_suffix()
+                current_conversation_id = f"{original_conversation_id}{suffix}"
+                logger.info(
+                    f"{info('🔄')} Conversation_id already exists, generating new ID | "
+                    f"{key_value('original', original_conversation_id)} | "
+                    f"{key_value('new_id', current_conversation_id)} | "
+                    f"{key_value('retry', f'{retry_count}/{max_retries}')}"
+                )
+            else:
+                # conversation_id chưa tồn tại, có thể dùng
+                break
+        
+        # Nếu conversation_id đã thay đổi, cập nhật vào request
+        if current_conversation_id != original_conversation_id:
+            logger.info(
+                f"{success('✅')} Using modified conversation_id | "
+                f"{key_value('original', original_conversation_id)} | "
+                f"{key_value('final', current_conversation_id)}"
+            )
+            # Tạo request mới với conversation_id đã được modify
+            request_dict = request.model_dump()
+            request_dict["conversation_id"] = current_conversation_id
+            request = ConversationEventCreateRequest(**request_dict)
 
         payload = request.model_dump(mode="json")
         payload.pop("duration_seconds", None)
@@ -106,12 +165,42 @@ class ConversationEventService:
         try:
             event = self.repository.create(payload)
         except IntegrityError as exc:
-            logger.warning("Duplicate conversation event detected: %s", exc)
-            raise ConversationEventAlreadyExistsError(
-                f"Conversation event already exists for conversation_id={request.conversation_id}"
-            ) from exc
+            # Nếu vẫn bị IntegrityError (race condition), thử lại với suffix mới
+            failed_conversation_id = payload.get("conversation_id", current_conversation_id)
+            logger.warning(
+                f"{warning('⚠️')} IntegrityError detected (race condition) | "
+                f"{key_value('conversation_id', failed_conversation_id)} | "
+                f"{key_value('error', str(exc))}"
+            )
+            
+            # Retry một lần nữa với suffix mới
+            suffix = _generate_timestamp_suffix()
+            new_conversation_id = f"{original_conversation_id}{suffix}"
+            payload["conversation_id"] = new_conversation_id
+            
+            logger.info(
+                f"{info('🔄')} Retrying with new conversation_id after IntegrityError | "
+                f"{key_value('failed_id', failed_conversation_id)} | "
+                f"{key_value('new_id', new_conversation_id)}"
+            )
+            
+            try:
+                event = self.repository.create(payload)
+            except IntegrityError as retry_exc:
+                logger.error(
+                    f"{error('❌')} Still duplicate after retry | "
+                    f"{key_value('conversation_id', new_conversation_id)}"
+                )
+                raise ConversationEventAlreadyExistsError(
+                    f"Conversation event already exists for conversation_id={new_conversation_id} "
+                    f"(original: {original_conversation_id})"
+                ) from retry_exc
 
-        logger.info("Conversation event stored for conversation_id=%s", event.conversation_id)
+        logger.info(
+            f"{success('✅')} Conversation event stored | "
+            f"{key_value('conversation_id', event.conversation_id)} | "
+            f"{key_value('original_id', original_conversation_id if event.conversation_id != original_conversation_id else 'same')}"
+        )
 
         # NOTE: Immediate processing removed - events will be processed by RabbitMQ worker
         # Background scheduler will still retry failed events as fallback
