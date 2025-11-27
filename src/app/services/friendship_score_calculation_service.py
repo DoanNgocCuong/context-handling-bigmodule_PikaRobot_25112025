@@ -152,7 +152,9 @@ class FriendshipScoreCalculationService:
         """
         try:
             # Extract metrics
-            total_turns = len(conversation_log)
+            # 1 turn = 1 cặp trao đổi (pika + user)
+            # Nếu số messages lẻ, làm tròn xuống (bỏ qua message cuối)
+            total_turns = len(conversation_log) // 2
             user_initiated_questions = self._count_user_initiated_questions(
                 conversation_log, metadata
             )
@@ -230,7 +232,8 @@ class FriendshipScoreCalculationService:
         Returns:
             Dictionary with calculation components
         """
-        total_turns = len(conversation_log)
+        # 1 turn = 1 cặp trao đổi (pika + user)
+        total_turns = len(conversation_log) // 2
         user_initiated_questions = self._count_user_initiated_questions(conversation_log, metadata)
         session_emotion = metadata.get("emotion", metadata.get("session_emotion", "neutral"))
         new_memories_count = metadata.get("new_memories_count", metadata.get("new_memories_created", 0))
