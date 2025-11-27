@@ -216,7 +216,7 @@ class FriendshipStatusData(BaseModel):
             "example": {
                 "user_id": "user_doanngoccuong",
                 "friendship_score": 29,
-                "friendship_level": "STRANGER",
+                "friendship_level": "PHASE1_STRANGER",
                 "last_interaction_date": "2025-11-25T18:30:00Z",
                 "streak_day": 0,
                 "topic_metrics": {}

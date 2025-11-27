@@ -69,7 +69,7 @@ Cấu trúc dữ liệu sẽ được lưu trong một cơ sở dữ liệu NoSQ
 | :--- | :--- | :--- | :--- |
 | `user_id` | String | (Primary Key) Mã định danh duy nhất của người dùng. | Bắt buộc. |
 | `friendship_score` | Float | Điểm số tổng thể đo lường mức độ thân thiết. | Cập nhật sau mỗi phiên. |
-| `friendship_level` | String | Cấp độ tình bạn: `STRANGER`, `ACQUAINTANCE`, `FRIEND`. | Tự động cập nhật dựa trên `friendship_score`. |
+| `friendship_level` | String | Cấp độ tình bạn: `PHASE1_STRANGER`, `PHASE2_ACQUAINTANCE`, `PHASE3_FRIEND`. | Tự động cập nhật dựa trên `friendship_score`. |
 | `last_interaction_date` | ISO 8601 Timestamp | Dấu thời gian của lần tương tác cuối cùng. | Cập nhật sau mỗi phiên. |
 | `streak_day` | Integer | Số ngày tương tác liên tiếp. | Cập nhật sau mỗi phiên. |
 | `topic_metrics` | Object / Map | Lưu trữ điểm và lịch sử tương tác cho từng chủ đề. | Cập nhật sau mỗi phiên. |
@@ -83,7 +83,7 @@ Cấu trúc dữ liệu sẽ được lưu trong một cơ sở dữ liệu NoSQ
 {
   "user_id": "user_123",
   "friendship_score": 785.5, // Đã được cập nhật sau phiên gần nhất
-  "friendship_level": "ACQUAINTANCE",
+  "friendship_level": "PHASE2_ACQUAINTANCE",
   "last_interaction_date": "2025-11-25T18:30:00Z",
   "streak_day": 6, // Tăng lên vì hôm qua cũng tương tác
   "topic_metrics": {

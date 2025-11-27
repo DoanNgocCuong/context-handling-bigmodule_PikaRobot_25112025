@@ -5,7 +5,7 @@ from typing import Optional
 from sqlalchemy.orm import Session
 from datetime import datetime
 from app.models.friendship_status_model import FriendshipStatus
-from app.core.constants_enums import FriendshipLevel, FRIENDSHIP_SCORE_THRESHOLDS
+from app.core.constants_enums import FriendshipLevel, PHASE3_FRIENDSHIP_SCORE_THRESHOLDS
 from app.core.exceptions_custom import FriendshipNotFoundError
 
 
@@ -29,7 +29,7 @@ class FriendshipStatusRepository:
         status = self.model(
             user_id=user_id,
             friendship_score=0.0,
-            friendship_level=FriendshipLevel.STRANGER.value,
+            friendship_level=FriendshipLevel.PHASE1_STRANGER.value,
             streak_day=0,
             topic_metrics={},
             last_interaction_date=datetime.utcnow(),
@@ -59,9 +59,9 @@ class FriendshipStatusRepository:
 
     def _determine_level(self, score: float) -> FriendshipLevel:
         """Determine friendship level from score thresholds."""
-        if score >= FRIENDSHIP_SCORE_THRESHOLDS[FriendshipLevel.FRIEND][0]:
-            return FriendshipLevel.FRIEND
-        if score >= FRIENDSHIP_SCORE_THRESHOLDS[FriendshipLevel.ACQUAINTANCE][0]:
-            return FriendshipLevel.ACQUAINTANCE
-        return FriendshipLevel.STRANGER
+        if score >= PHASE3_FRIENDSHIP_SCORE_THRESHOLDS[FriendshipLevel.PHASE3_FRIEND][0]:
+            return FriendshipLevel.PHASE3_FRIEND
+        if score >= PHASE3_FRIENDSHIP_SCORE_THRESHOLDS[FriendshipLevel.PHASE2_ACQUAINTANCE][0]:
+            return FriendshipLevel.PHASE2_ACQUAINTANCE
+        return FriendshipLevel.PHASE1_STRANGER
 

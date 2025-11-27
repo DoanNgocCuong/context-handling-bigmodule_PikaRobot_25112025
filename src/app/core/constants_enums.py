@@ -6,9 +6,9 @@ from enum import Enum
 
 class FriendshipLevel(str, Enum):
     """Friendship level enumeration."""
-    STRANGER = "STRANGER"
-    ACQUAINTANCE = "ACQUAINTANCE"
-    FRIEND = "FRIEND"
+    PHASE1_STRANGER = "PHASE1_STRANGER"
+    PHASE2_ACQUAINTANCE = "PHASE2_ACQUAINTANCE"
+    PHASE3_FRIEND = "PHASE3_FRIEND"
 
 
 class AgentType(str, Enum):
@@ -28,15 +28,15 @@ class ConversationEventStatus(str, Enum):
 
 
 # Score thresholds for friendship levels
-FRIENDSHIP_SCORE_THRESHOLDS = {
-    FriendshipLevel.STRANGER: (0, 500),
-    FriendshipLevel.ACQUAINTANCE: (500, 3000),
-    FriendshipLevel.FRIEND: (3000, float('inf'))
+PHASE3_FRIENDSHIP_SCORE_THRESHOLDS = {
+    FriendshipLevel.PHASE1_STRANGER: (0, 500),
+    FriendshipLevel.PHASE2_ACQUAINTANCE: (500, 3000),
+    FriendshipLevel.PHASE3_FRIEND: (3000, float('inf'))
 }
 
 # Default values
-DEFAULT_FRIENDSHIP_SCORE = 0.0
-DEFAULT_FRIENDSHIP_LEVEL = FriendshipLevel.STRANGER
+DEFAULT_PHASE3_FRIENDSHIP_SCORE = 0.0
+DEFAULT_PHASE3_FRIENDSHIP_LEVEL = FriendshipLevel.PHASE1_STRANGER
 DEFAULT_STREAK_DAY = 0
 DEFAULT_TOPIC_METRICS = {}
 
@@ -46,7 +46,7 @@ CACHE_TTL_DEFAULT = 3600  # 1 hour
 
 # Cache key prefixes
 CACHE_KEY_PREFIX_CANDIDATES = "candidates"
-CACHE_KEY_PREFIX_FRIENDSHIP = "friendship"
+CACHE_KEY_PREFIX_PHASE3_FRIENDSHIP = "friendship"
 
 # Conversation event processing defaults
 # CONVERSATION_EVENT_RETRY_MINUTES = 1/60  # retry after 1 minute

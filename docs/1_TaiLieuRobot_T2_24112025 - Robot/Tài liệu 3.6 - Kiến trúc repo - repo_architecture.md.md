@@ -330,7 +330,7 @@ File `src/models/schemas.py` chứa tất cả Pydantic schemas cho request/resp
 ### 5.4. Enums và Constants
 
 File `src/utils/enums.py` chứa các enum được sử dụng bởi cả hai modules:
-- `FriendshipLevel` (STRANGER, ACQUAINTANCE, FRIEND)
+- `FriendshipLevel` (PHASE1_STRANGER, PHASE2_ACQUAINTANCE, PHASE3_FRIEND)
 - `Phase` (PHASE_1, PHASE_2, PHASE_3)
 - `AgentType` (GREETING, TALK, GAME)
 - `Emotion` (interesting, boring, neutral, happy, sad)

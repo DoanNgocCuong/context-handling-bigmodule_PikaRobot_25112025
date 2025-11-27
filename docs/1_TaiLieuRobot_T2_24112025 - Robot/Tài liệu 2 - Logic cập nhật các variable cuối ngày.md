@@ -37,10 +37,10 @@ Một tác vụ nền (background job), chẳng hạn như Cron Job hoặc một
 
     **c. Cập nhật các biến trạng thái:**
     *   **`friendship_score`:** `friendship_score` (mới) = `friendship_score` (cũ) + `daily_change_score`.
-    *   **`friendship_level`:** Cập nhật lại cấp độ (`STRANGER`, `ACQUAINTANCE`, `FRIEND`) dựa trên ngưỡng điểm của `friendship_score` mới.
-        *   `0 - 500`: STRANGER
-        *   `500 - 3000`: ACQUAINTANCE
-        *   `> 3000`: FRIEND
+    *   **`friendship_level`:** Cập nhật lại cấp độ (`PHASE1_STRANGER`, `PHASE2_ACQUAINTANCE`, `PHASE3_FRIEND`) dựa trên ngưỡng điểm của `friendship_score` mới.
+        *   `0 - 500`: PHASE1_STRANGER
+        *   `500 - 3000`: PHASE2_ACQUAINTANCE
+        *   `> 3000`: PHASE3_FRIEND
     *   **`topic_metrics`:** Lặp qua `daily_metrics.topic_details`. Với mỗi topic:
         *   `topic_score` (mới) = `topic_score` (cũ) + (`turns` * 0.5 + `user_questions` * 3).
         *   `total_turns` (mới) = `total_turns` (cũ) + `turns`.

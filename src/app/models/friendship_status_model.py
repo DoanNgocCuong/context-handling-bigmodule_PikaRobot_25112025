@@ -12,7 +12,7 @@ class FriendshipStatus(Base):
 
     user_id = Column(String(255), primary_key=True, index=True)
     friendship_score = Column(Float, nullable=False, default=0.0)
-    friendship_level = Column(String(50), nullable=False, default="STRANGER")
+    friendship_level = Column(String(50), nullable=False, default="PHASE1_STRANGER")
     last_interaction_date = Column(DateTime(timezone=True), nullable=True)
     streak_day = Column(Integer, nullable=False, default=0)
     topic_metrics = Column(JSONB, nullable=False, default=dict)

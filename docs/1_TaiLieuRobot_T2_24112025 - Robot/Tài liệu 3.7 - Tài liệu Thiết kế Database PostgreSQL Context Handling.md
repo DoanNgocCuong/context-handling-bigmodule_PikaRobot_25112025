@@ -70,7 +70,7 @@ Bảng trung tâm, lưu trữ trạng thái tình bạn hiện tại của ngư�
 CREATE TABLE friendship_status (
     user_id VARCHAR(255) PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
     friendship_score FLOAT DEFAULT 0.0 NOT NULL,
-    friendship_level VARCHAR(50) DEFAULT 'STRANGER' NOT NULL, -- STRANGER, ACQUAINTANCE, FRIEND
+    friendship_level VARCHAR(50) DEFAULT 'PHASE1_STRANGER' NOT NULL, -- PHASE1_STRANGER, PHASE2_ACQUAINTANCE, PHASE3_FRIEND
     phase VARCHAR(50) DEFAULT 'PHASE_1' NOT NULL, -- PHASE_1, PHASE_2, PHASE_3
     last_interaction_date TIMESTAMP WITH TIME ZONE,
     streak_day INTEGER DEFAULT 0 NOT NULL,

@@ -14,7 +14,7 @@ Một bản ghi `friendship_status` cho một người dùng sẽ bao gồm các
 | :---------------------- | :----------------- | :---------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------- |
 | `user_id`               | String             | (Primary Key) Mã định danh duy nhất của người dùng.                                                         | Bắt buộc để xác định dữ liệu thuộc về người dùng nào.                                                                       |
 | `friendship_score`      | Float              | Điểm số tổng thể đo lường mức độ thân thiết. Đây là chỉ số cốt lõi, thay đổi hàng ngày.                     | Là "trí nhớ dài hạn" về lịch sử mối quan hệ, quyết định cấp độ tình bạn.                                                    |
-| `friendship_level`      | String (Enum)      | Cấp độ tình bạn hiện tại, được suy ra từ `friendship_score`. Giá trị: `STRANGER`, `ACQUAINTANCE`, `FRIEND`. | Để hệ thống nhanh chóng xác định hành vi, giọng điệu của Pika mà không cần tính toán lại từ điểm số.                        |
+| `friendship_level`      | String (Enum)      | Cấp độ tình bạn hiện tại, được suy ra từ `friendship_score`. Giá trị: `PHASE1_STRANGER`, `PHASE2_ACQUAINTANCE`, `PHASE3_FRIEND`. | Để hệ thống nhanh chóng xác định hành vi, giọng điệu của Pika mà không cần tính toán lại từ điểm số.                        |
 | `last_interaction_date` | ISO 8601 Timestamp | Dấu thời gian của lần tương tác cuối cùng.                                                                  | Dùng để tính `streak_day` và xác định các kịch bản vắng mặt (returning after absence).                                      |
 | `streak_day`            | Integer            | Số ngày tương tác liên tiếp.                                                                                | Ghi nhận sự cam kết của người dùng, dùng để kích hoạt các kịch bản Greeting đặc biệt (ví dụ: Streak Milestone).             |
 | `daily_metrics`         | Object             | Một đối tượng tạm thời để thu thập các chỉ số trong ngày. Sẽ được xử lý và xóa sau khi cập nhật cuối ngày.  | Tách biệt dữ liệu thô hàng ngày khỏi dữ liệu tổng hợp dài hạn, giúp quy trình cập nhật cuối ngày rõ ràng và an toàn.        |
@@ -29,7 +29,7 @@ Dưới đây là ví dụ về cấu trúc dữ liệu cho người dùng `user
 {
   "user_id": "user_123",
   "friendship_score": 750.5,
-  "friendship_level": "ACQUAINTANCE",
+  "friendship_level": "PHASE2_ACQUAINTANCE",
   "last_interaction_date": "2025-11-24T15:00:00Z",
   "streak_day": 5,
   "daily_metrics": {

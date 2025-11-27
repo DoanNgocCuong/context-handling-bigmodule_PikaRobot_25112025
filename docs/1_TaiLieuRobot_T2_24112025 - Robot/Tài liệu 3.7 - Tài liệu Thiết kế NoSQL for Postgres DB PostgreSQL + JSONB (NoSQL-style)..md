@@ -101,7 +101,7 @@ CREATE INDEX idx_friendship_data_phase ON friendship_data ((data->>'phase'));
 ```json
 {
   "friendship_score": 785.5,
-  "friendship_level": "ACQUAINTANCE",
+  "friendship_level": "PHASE2_ACQUAINTANCE",
   "phase": "PHASE_2",
   "last_interaction_date": "2025-11-25T18:30:00Z",
   "streak_day": 6,
@@ -260,7 +260,7 @@ class InteractionHistorySchema(BaseModel):
 
 class FriendshipDataSchema(BaseModel):
     friendship_score: float
-    friendship_level: str  # STRANGER, ACQUAINTANCE, FRIEND
+    friendship_level: str  # PHASE1_STRANGER, PHASE2_ACQUAINTANCE, PHASE3_FRIEND
     phase: str  # PHASE_1, PHASE_2, PHASE_3
     last_interaction_date: Optional[datetime] = None
     streak_day: int = 0
@@ -377,7 +377,7 @@ class FriendshipService:
                 user_id=user_id,
                 data={
                     "friendship_score": score_change,
-                    "friendship_level": "STRANGER",
+                    "friendship_level": "PHASE1_STRANGER",
                     "phase": "PHASE_1",
                     "last_interaction_date": datetime.utcnow().isoformat(),
                     "streak_day": 1,
@@ -398,13 +398,13 @@ class FriendshipService:
             # Cập nhật level và phase dựa trên score
             score = data["friendship_score"]
             if score < 100:
-                data["friendship_level"] = "STRANGER"
+                data["friendship_level"] = "PHASE1_STRANGER"
                 data["phase"] = "PHASE_1"
             elif score < 500:
-                data["friendship_level"] = "ACQUAINTANCE"
+                data["friendship_level"] = "PHASE2_ACQUAINTANCE"
                 data["phase"] = "PHASE_2"
             else:
-                data["friendship_level"] = "FRIEND"
+                data["friendship_level"] = "PHASE3_FRIEND"
                 data["phase"] = "PHASE_3"
             
             # Cập nhật topic metrics
@@ -667,9 +667,9 @@ def health_check():
 from enum import Enum
 
 class FriendshipLevel(str, Enum):
-    STRANGER = "STRANGER"
-    ACQUAINTANCE = "ACQUAINTANCE"
-    FRIEND = "FRIEND"
+    PHASE1_STRANGER = "PHASE1_STRANGER"
+    PHASE2_ACQUAINTANCE = "PHASE2_ACQUAINTANCE"
+    PHASE3_FRIEND = "PHASE3_FRIEND"
 
 class Phase(str, Enum):
     PHASE_1 = "PHASE_1"

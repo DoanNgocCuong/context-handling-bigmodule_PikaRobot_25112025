@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Context Handling - Friendship Management module is a FastAPI-based microservice that manages the relationship state between users and the Pika AI companion. The system uses an event-driven architecture with asynchronous processing to handle conversation analysis, friendship scoring, and personalized activity recommendations without blocking user interactions.
+The Context Handling - PHRASE3_PHASE3_PHASE3_FRIENDship Management module is a FastAPI-based microservice that manages the relationship state between users and the Pika AI companion. The system uses an event-driven architecture with asynchronous processing to handle conversation analysis, PHRASE3_PHASE3_PHASE3_FRIENDship scoring, and personalized activity recommendations without blocking user interactions.
 
 ### Key Design Principles
 
@@ -56,11 +56,11 @@ PHASE 2: ASYNC PROCESSING (Background)
 ═══════════════════════════════════════════════════════════════
 6. AI Scoring Service → Consume event from queue
 7. AI Scoring Service → GET /conversations/{id} from Backend
-8. AI Scoring Service → Calculate friendship_score_change
+8. AI Scoring Service → Calculate PHRASE3_PHASE3_PHASE3_FRIENDship_score_change
 9. AI Scoring Service → Calculate topic_metrics_update
-10. AI Scoring Service → POST /friendship/update to Context Service
+10. AI Scoring Service → POST /PHRASE3_PHASE3_PHASE3_FRIENDship/update to Context Service
 11. Context Service → Update PostgreSQL database
-12. Context Service → Invalidate cache if friendship_level changed
+12. Context Service → Invalidate cache if PHRASE3_PHASE3_PHASE3_FRIENDship_level changed
 13. Context Service → Compute new candidates
 14. Context Service → Cache candidates in Redis (6h TTL)
 
@@ -83,9 +83,9 @@ PHASE 3: ACTIVITY SUGGESTION (Fast retrieval)
 - `POST /v1/conversations/end` - Notify conversation end (202 Accepted)
 - `GET /v1/conversations/{conversation_id}` - Retrieve conversation data (Backend only)
 
-**Friendship Management**
-- `POST /v1/friendship/status` - Get current friendship status
-- `POST /v1/friendship/update` - Update friendship status (AI Service only)
+**PHRASE3_PHASE3_PHASE3_FRIENDship Management**
+- `POST /v1/PHRASE3_PHASE3_PHASE3_FRIENDship/status` - Get current PHRASE3_PHASE3_PHASE3_FRIENDship status
+- `POST /v1/PHRASE3_PHASE3_PHASE3_FRIENDship/update` - Update PHRASE3_PHASE3_PHASE3_FRIENDship status (AI Service only)
 
 **Activity Suggestion**
 - `POST /v1/activities/suggest` - Get pre-computed activity suggestions
@@ -115,14 +115,14 @@ class ConversationEndResponse(BaseModel):
     conversation_id: str
     processing_id: str
 
-# Friendship Status
-class FriendshipStatusRequest(BaseModel):
+# PHRASE3_PHASE3_PHASE3_FRIENDship Status
+class PHRASE3_PHASE3_PHASE3_FRIENDshipStatusRequest(BaseModel):
     user_id: str
 
-class FriendshipStatusResponse(BaseModel):
+class PHRASE3_PHASE3_PHASE3_FRIENDshipStatusResponse(BaseModel):
     user_id: str
-    friendship_score: float
-    friendship_level: str
+    PHRASE3_PHASE3_PHASE3_FRIENDship_score: float
+    PHRASE3_PHASE3_PHASE3_FRIENDship_level: str
     last_interaction_date: Optional[datetime]
     streak_day: int
     total_turns: int
@@ -139,7 +139,7 @@ class ActivitySuggestionRequest(BaseModel):
 
 class ActivitySuggestionResponse(BaseModel):
     user_id: str
-    friendship_level: str
+    PHRASE3_PHASE3_PHASE3_FRIENDship_level: str
     computed_at: datetime
     greeting_agent: AgentDetail
     talk_agents: List[AgentDetail]
@@ -147,7 +147,7 @@ class ActivitySuggestionResponse(BaseModel):
 
 class AgentDetail(BaseModel):
     id: int
-    friendship_level: str
+    PHRASE3_PHASE3_PHASE3_FRIENDship_level: str
     agent_type: str
     agent_id: str
     agent_name: str
@@ -161,35 +161,35 @@ class AgentDetail(BaseModel):
 
 ### 2. Service Layer
 
-#### FriendshipService
+#### PHRASE3_PHASE3_PHASE3_FRIENDshipService
 
 **Responsibilities:**
-- Calculate friendship score changes from conversation data
-- Update friendship status in database
-- Manage friendship level transitions
+- Calculate PHRASE3_PHASE3_PHASE3_FRIENDship score changes from conversation data
+- Update PHRASE3_PHASE3_PHASE3_FRIENDship status in database
+- Manage PHRASE3_PHASE3_PHASE3_FRIENDship level transitions
 - Update streak day logic
 
 **Key Methods:**
 ```python
-class FriendshipService:
+class PHRASE3_PHASE3_PHASE3_FRIENDshipService:
     def calculate_score_change(
         self, 
         conversation_log: List[Message], 
         metadata: Dict
     ) -> float:
         """
-        Calculate friendship score change using formula:
+        Calculate PHRASE3_PHASE3_PHASE3_FRIENDship score change using formula:
         base_score + engagement_bonus + emotion_bonus + memory_bonus
         """
         
-    def update_friendship_status(
+    def update_PHRASE3_PHASE3_PHASE3_FRIENDship_status(
         self,
         user_id: str,
         score_change: float,
         topic_metrics_update: Dict
-    ) -> FriendshipStatus:
+    ) -> PHRASE3_PHASE3_PHASE3_FRIENDshipStatus:
         """
-        Update friendship status and handle level transitions
+        Update PHRASE3_PHASE3_PHASE3_FRIENDship status and handle level transitions
         """
         
     def calculate_topic_metrics_update(
@@ -233,22 +233,22 @@ class SelectionService:
     def select_greeting_agent(
         self,
         user_id: str,
-        friendship_level: str,
-        friendship_status: FriendshipStatus
+        PHRASE3_PHASE3_PHASE3_FRIENDship_level: str,
+        PHRASE3_PHASE3_PHASE3_FRIENDship_status: PHRASE3_PHASE3_PHASE3_FRIENDshipStatus
     ) -> AgentDetail:
         """
         Select greeting agent with priority logic:
         1. Birthday greeting (if today is birthday)
         2. Returning user (if streak > 3)
         3. Emotion-based (if last emotion was strong)
-        4. Memory recall (if ACQUAINTANCE+)
+        4. Memory recall (if PHASE2_PHASE2_ACQUAINTANCE+)
         5. Weighted random from pool
         """
         
     def select_talk_agents(
         self,
         user_id: str,
-        friendship_level: str,
+        PHRASE3_PHASE3_PHASE3_FRIENDship_level: str,
         topic_metrics: Dict,
         count: int = 2
     ) -> List[AgentDetail]:
@@ -263,7 +263,7 @@ class SelectionService:
         
     def select_game_agents(
         self,
-        friendship_level: str,
+        PHRASE3_PHASE3_PHASE3_FRIENDship_level: str,
         count: int = 2
     ) -> List[AgentDetail]:
         """
@@ -282,69 +282,69 @@ class SelectionService:
 
 ### 3. Repository Layer
 
-#### FriendshipRepository
+#### PHRASE3_PHASE3_PHASE3_FRIENDshipRepository
 
 **Responsibilities:**
-- CRUD operations for friendship_status table
+- CRUD operations for PHRASE3_PHASE3_PHASE3_FRIENDship_status table
 - Query optimization using indexes
 - JSONB field manipulation for topic_metrics
 
 **Key Methods:**
 ```python
-class FriendshipRepository(BaseRepository[FriendshipStatus]):
-    def get_by_user_id(self, user_id: str) -> Optional[FriendshipStatus]
+class PHRASE3_PHASE3_PHASE3_FRIENDshipRepository(BaseRepository[PHRASE3_PHASE3_PHASE3_FRIENDshipStatus]):
+    def get_by_user_id(self, user_id: str) -> Optional[PHRASE3_PHASE3_PHASE3_FRIENDshipStatus]
     
     def create_or_update(
         self,
         user_id: str,
         score_change: float,
         topic_metrics_update: Dict
-    ) -> FriendshipStatus
+    ) -> PHRASE3_PHASE3_PHASE3_FRIENDshipStatus
     
     def update_score(
         self,
         user_id: str,
         score_change: float
-    ) -> FriendshipStatus
+    ) -> PHRASE3_PHASE3_PHASE3_FRIENDshipStatus
     
     def update_topic_metrics(
         self,
         user_id: str,
         topic_id: str,
         metrics_update: Dict
-    ) -> FriendshipStatus
+    ) -> PHRASE3_PHASE3_PHASE3_FRIENDshipStatus
     
     def get_users_by_level(
         self,
-        friendship_level: str
-    ) -> List[FriendshipStatus]
+        PHRASE3_PHASE3_PHASE3_FRIENDship_level: str
+    ) -> List[PHRASE3_PHASE3_PHASE3_FRIENDshipStatus]
 ```
 
 #### AgentRepository
 
 **Responsibilities:**
-- CRUD operations for friendship_agent_mapping table
+- CRUD operations for PHRASE3_PHASE3_PHASE3_FRIENDship_agent_mapping table
 - Filter agents by level and type
 - Manage agent activation status
 
 **Key Methods:**
 ```python
-class AgentRepository(BaseRepository[FriendshipAgentMapping]):
+class AgentRepository(BaseRepository[PHRASE3_PHASE3_PHASE3_FRIENDshipAgentMapping]):
     def get_by_level_and_type(
         self,
-        friendship_level: str,
+        PHRASE3_PHASE3_PHASE3_FRIENDship_level: str,
         agent_type: str,
         active_only: bool = True
-    ) -> List[FriendshipAgentMapping]
+    ) -> List[PHRASE3_PHASE3_PHASE3_FRIENDshipAgentMapping]
     
-    def get_all_active(self) -> List[FriendshipAgentMapping]
+    def get_all_active(self) -> List[PHRASE3_PHASE3_PHASE3_FRIENDshipAgentMapping]
     
     def soft_delete(self, mapping_id: int) -> bool
     
     def bulk_create(
         self,
         mappings: List[AgentMappingCreate]
-    ) -> List[FriendshipAgentMapping]
+    ) -> List[PHRASE3_PHASE3_PHASE3_FRIENDshipAgentMapping]
 ```
 
 ### 4. Cache Layer
@@ -383,7 +383,7 @@ class CacheManager:
         user_id: str
     ) -> bool:
         """
-        Invalidate cache when friendship_level changes
+        Invalidate cache when PHRASE3_PHASE3_PHASE3_FRIENDship_level changes
         """
         
     def get_cache_stats(self) -> Dict:
@@ -427,9 +427,9 @@ class ConversationEndConsumer:
     ):
         """
         1. Fetch conversation data from Backend
-        2. Calculate friendship score change
+        2. Calculate PHRASE3_PHASE3_PHASE3_FRIENDship score change
         3. Calculate topic metrics update
-        4. Update friendship status via Context Service API
+        4. Update PHRASE3_PHASE3_PHASE3_FRIENDship status via Context Service API
         5. Trigger candidate recomputation
         """
 ```
@@ -438,15 +438,15 @@ class ConversationEndConsumer:
 
 ### Database Schema
 
-#### friendship_status Table
+#### PHRASE3_PHASE3_PHASE3_FRIENDship_status Table
 
 ```sql
-CREATE TABLE friendship_status (
+CREATE TABLE PHRASE3_PHASE3_PHASE3_FRIENDship_status (
     user_id VARCHAR(255) PRIMARY KEY,
-    friendship_score FLOAT NOT NULL DEFAULT 0.0 
-        CHECK (friendship_score >= 0),
-    friendship_level VARCHAR(50) NOT NULL DEFAULT 'STRANGER' 
-        CHECK (friendship_level IN ('STRANGER', 'ACQUAINTANCE', 'FRIEND')),
+    PHRASE3_PHASE3_PHASE3_FRIENDship_score FLOAT NOT NULL DEFAULT 0.0 
+        CHECK (PHRASE3_PHASE3_PHASE3_FRIENDship_score >= 0),
+    PHRASE3_PHASE3_PHASE3_FRIENDship_level VARCHAR(50) NOT NULL DEFAULT 'PHASE1_PHASE1_STRANGER' 
+        CHECK (PHRASE3_PHASE3_PHASE3_FRIENDship_level IN ('PHASE1_PHASE1_STRANGER', 'PHASE2_PHASE2_ACQUAINTANCE', 'PHRASE3_PHASE3_PHASE3_FRIEND')),
     last_interaction_date TIMESTAMP,
     streak_day INTEGER NOT NULL DEFAULT 0,
     topic_metrics JSONB NOT NULL DEFAULT '{}',
@@ -454,21 +454,21 @@ CREATE TABLE friendship_status (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_friendship_level 
-    ON friendship_status(friendship_level);
+CREATE INDEX idx_PHRASE3_PHASE3_PHASE3_FRIENDship_level 
+    ON PHRASE3_PHASE3_PHASE3_FRIENDship_status(PHRASE3_PHASE3_PHASE3_FRIENDship_level);
 CREATE INDEX idx_last_interaction_date 
-    ON friendship_status(last_interaction_date DESC);
+    ON PHRASE3_PHASE3_PHASE3_FRIENDship_status(last_interaction_date DESC);
 CREATE INDEX idx_topic_metrics_gin 
-    ON friendship_status USING GIN (topic_metrics);
+    ON PHRASE3_PHASE3_PHASE3_FRIENDship_status USING GIN (topic_metrics);
 ```
 
-#### friendship_agent_mapping Table
+#### PHRASE3_PHASE3_PHASE3_FRIENDship_agent_mapping Table
 
 ```sql
-CREATE TABLE friendship_agent_mapping (
+CREATE TABLE PHRASE3_PHASE3_PHASE3_FRIENDship_agent_mapping (
     id SERIAL PRIMARY KEY,
-    friendship_level VARCHAR(50) NOT NULL 
-        CHECK (friendship_level IN ('STRANGER', 'ACQUAINTANCE', 'FRIEND')),
+    PHRASE3_PHASE3_PHASE3_FRIENDship_level VARCHAR(50) NOT NULL 
+        CHECK (PHRASE3_PHASE3_PHASE3_FRIENDship_level IN ('PHASE1_PHASE1_STRANGER', 'PHASE2_PHASE2_ACQUAINTANCE', 'PHRASE3_PHASE3_PHASE3_FRIEND')),
     agent_type VARCHAR(50) NOT NULL 
         CHECK (agent_type IN ('GREETING', 'TALK', 'GAME_ACTIVITY')),
     agent_id VARCHAR(255) NOT NULL,
@@ -478,17 +478,17 @@ CREATE TABLE friendship_agent_mapping (
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE (friendship_level, agent_type, agent_id)
+    UNIQUE (PHRASE3_PHASE3_PHASE3_FRIENDship_level, agent_type, agent_id)
 );
 
-CREATE INDEX idx_friendship_level 
-    ON friendship_agent_mapping(friendship_level);
+CREATE INDEX idx_PHRASE3_PHASE3_PHASE3_FRIENDship_level 
+    ON PHRASE3_PHASE3_PHASE3_FRIENDship_agent_mapping(PHRASE3_PHASE3_PHASE3_FRIENDship_level);
 CREATE INDEX idx_agent_type 
-    ON friendship_agent_mapping(agent_type);
+    ON PHRASE3_PHASE3_PHASE3_FRIENDship_agent_mapping(agent_type);
 CREATE INDEX idx_is_active 
-    ON friendship_agent_mapping(is_active);
+    ON PHRASE3_PHASE3_PHASE3_FRIENDship_agent_mapping(is_active);
 CREATE INDEX idx_level_type_active 
-    ON friendship_agent_mapping(friendship_level, agent_type, is_active);
+    ON PHRASE3_PHASE3_PHASE3_FRIENDship_agent_mapping(PHRASE3_PHASE3_PHASE3_FRIENDship_level, agent_type, is_active);
 ```
 
 ### JSONB Structure for topic_metrics
@@ -513,13 +513,13 @@ CREATE INDEX idx_level_type_active
 }
 ```
 
-### Friendship Level Thresholds
+### PHRASE3_PHASE3_PHASE3_FRIENDship Level Thresholds
 
 ```python
-FRIENDSHIP_SCORE_THRESHOLDS = {
-    "STRANGER": (0, 100),
-    "ACQUAINTANCE": (100, 500),
-    "FRIEND": (500, float('inf'))
+PHRASE3_PHASE3_PHASE3_FRIENDSHIP_SCORE_THRESHOLDS = {
+    "PHASE1_PHASE1_STRANGER": (0, 100),
+    "PHASE2_PHASE2_ACQUAINTANCE": (100, 500),
+    "PHRASE3_PHASE3_PHASE3_FRIEND": (500, float('inf'))
 }
 ```
 
@@ -574,14 +574,14 @@ async def process_with_retry(task):
 
 - **Service Layer Tests**
   - `test_calculate_score_change()` - Test all formula components
-  - `test_update_friendship_status()` - Test level transitions
+  - `test_update_PHRASE3_PHASE3_PHASE3_FRIENDship_status()` - Test level transitions
   - `test_select_greeting_agent()` - Test priority logic
   - `test_select_talk_agents()` - Test scoring and selection
   - `test_select_game_agents()` - Test weighted random
   - `test_update_streak_day()` - Test streak logic
 
 - **Repository Layer Tests**
-  - `test_create_friendship_status()` - Test CRUD operations
+  - `test_create_PHRASE3_PHASE3_PHASE3_FRIENDship_status()` - Test CRUD operations
   - `test_update_topic_metrics()` - Test JSONB updates
   - `test_get_by_level_and_type()` - Test filtering
 
@@ -594,13 +594,13 @@ async def process_with_retry(task):
 
 - **API Endpoint Tests**
   - `test_conversation_end_flow()` - Test full async flow
-  - `test_friendship_status_retrieval()` - Test status API
+  - `test_PHRASE3_PHASE3_PHASE3_FRIENDship_status_retrieval()` - Test status API
   - `test_activity_suggestion_cached()` - Test cache hit
   - `test_activity_suggestion_miss()` - Test cache miss
   - `test_agent_mapping_crud()` - Test CRUD operations
 
 - **Database Tests**
-  - `test_friendship_level_transition()` - Test threshold logic
+  - `test_PHRASE3_PHASE3_PHASE3_FRIENDship_level_transition()` - Test threshold logic
   - `test_topic_metrics_merge()` - Test JSONB merge
   - `test_concurrent_updates()` - Test race conditions
 
@@ -700,14 +700,14 @@ services:
 - Message queue lag
 - Database query performance
 - Error rates by endpoint
-- Friendship level distribution
+- PHRASE3_PHASE3_PHASE3_FRIENDship level distribution
 - Agent selection distribution
 
 **Logging Strategy:**
 - Structured JSON logging in production
 - Log levels: DEBUG (dev), INFO (staging), WARNING (prod)
 - Include request_id in all logs for tracing
-- Log all friendship level transitions
+- Log all PHRASE3_PHASE3_PHASE3_FRIENDship level transitions
 - Log all cache invalidations
 
 **Alerting:**
@@ -732,9 +732,9 @@ services:
 
 1. **Machine Learning Integration**: Use ML models to predict optimal agent selection
 2. **A/B Testing Framework**: Test different selection algorithms
-3. **Real-time Analytics Dashboard**: Visualize friendship metrics and trends
+3. **Real-time Analytics Dashboard**: Visualize PHRASE3_PHASE3_PHASE3_FRIENDship metrics and trends
 4. **Multi-language Support**: Internationalize agent descriptions
 5. **Advanced Caching**: Implement cache warming strategies
 6. **GraphQL API**: Provide GraphQL interface for flexible queries
-7. **Webhook Support**: Allow external systems to subscribe to friendship events
+7. **Webhook Support**: Allow external systems to subscribe to PHRASE3_PHASE3_PHASE3_FRIENDship events
 8. **Batch Processing**: Optimize bulk candidate recomputation

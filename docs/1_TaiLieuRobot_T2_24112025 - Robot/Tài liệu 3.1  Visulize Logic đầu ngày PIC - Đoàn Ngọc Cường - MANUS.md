@@ -10,9 +10,9 @@ flowchart TD
     Step1 --> LoadData[Tải friendship_status]
     LoadData --> DeterminePhase{Xác định Phase<br/>dựa trên friendship_score}
     
-    DeterminePhase -->|score < 500| Phase1[Phase 1: STRANGER]
-    DeterminePhase -->|500 ≤ score ≤ 3000| Phase2[Phase 2: ACQUAINTANCE]
-    DeterminePhase -->|score > 3000| Phase3[Phase 3: FRIEND]
+    DeterminePhase -->|score < 500| Phase1[Phase 1: PHASE1_STRANGER]
+    DeterminePhase -->|500 ≤ score ≤ 3000| Phase2[Phase 2: PHASE2_ACQUAINTANCE]
+    DeterminePhase -->|score > 3000| Phase3[Phase 3: PHASE3_FRIEND]
     
     Phase1 --> Step2[Bước 2: Lọc Kho Hoạt Động]
     Phase2 --> Step2
@@ -66,9 +66,9 @@ flowchart LR
     
     GetScore --> Check{Kiểm tra<br/>friendship_score}
     
-    Check -->|< 500| P1[Phase 1: STRANGER<br/>━━━━━━━━━━<br/>Kho Greeting: V1<br/>Talk: Bề mặt<br/>Game: Đơn giản]
-    Check -->|500-3000| P2[Phase 2: ACQUAINTANCE<br/>━━━━━━━━━━<br/>Kho Greeting: V1+V2<br/>Talk: +Trường học, Bạn bè<br/>Game: +Cá nhân hóa]
-    Check -->|> 3000| P3[Phase 3: FRIEND<br/>━━━━━━━━━━<br/>Kho Greeting: V1+V2+V3<br/>Talk: +Gia đình, Lịch sử<br/>Game: +Dự án chung]
+    Check -->|< 500| P1[Phase 1: PHASE1_STRANGER<br/>━━━━━━━━━━<br/>Kho Greeting: V1<br/>Talk: Bề mặt<br/>Game: Đơn giản]
+    Check -->|500-3000| P2[Phase 2: PHASE2_ACQUAINTANCE<br/>━━━━━━━━━━<br/>Kho Greeting: V1+V2<br/>Talk: +Trường học, Bạn bè<br/>Game: +Cá nhân hóa]
+    Check -->|> 3000| P3[Phase 3: PHASE3_FRIEND<br/>━━━━━━━━━━<br/>Kho Greeting: V1+V2+V3<br/>Talk: +Gia đình, Lịch sử<br/>Game: +Dự án chung]
     
     P1 --> Output([Phase đã xác định])
     P2 --> Output
@@ -275,21 +275,21 @@ sequenceDiagram
 stateDiagram-v2
     [*] --> Stranger: User mới<br/>score = 0
     
-    Stranger: Phase 1: STRANGER
+    Stranger: Phase 1: PHASE1_STRANGER
     Stranger: score < 500
     Stranger: ━━━━━━━━━━
     Stranger: Greeting: V1
     Stranger: Talk: Bề mặt
     Stranger: Game: Đơn giản
     
-    Acquaintance: Phase 2: ACQUAINTANCE
+    Acquaintance: Phase 2: PHASE2_ACQUAINTANCE
     Acquaintance: 500 ≤ score ≤ 3000
     Acquaintance: ━━━━━━━━━━
     Acquaintance: Greeting: V1+V2
     Acquaintance: Talk: +Trường học, Bạn bè
     Acquaintance: Game: +Cá nhân hóa
     
-    Friend: Phase 3: FRIEND
+    Friend: Phase 3: PHASE3_FRIEND
     Friend: score > 3000
     Friend: ━━━━━━━━━━
     Friend: Greeting: V1+V2+V3
@@ -347,9 +347,9 @@ classDiagram
     
     class Phase {
         <<enumeration>>
-        STRANGER
-        ACQUAINTANCE
-        FRIEND
+        PHASE1_STRANGER
+        PHASE2_ACQUAINTANCE
+        PHASE3_FRIEND
         +getGreetingPool()
         +getTalkPool()
         +getGamePool()

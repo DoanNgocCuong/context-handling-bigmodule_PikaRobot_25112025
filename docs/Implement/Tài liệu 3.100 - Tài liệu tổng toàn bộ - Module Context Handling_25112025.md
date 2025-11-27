@@ -71,7 +71,7 @@ Cấu trúc dữ liệu sẽ được lưu trong một cơ sở dữ liệu SQL 
 | :------------------------ | :----------------- | :--------------------------------------------------------------- | :----------------------------------------------------- | - |
 | `user_id`               | String             | (Primary Key) Mã định danh duy nhất của người dùng.      | Bắt buộc.                                            |  |
 | `friendship_score`      | Float              | Điểm số tổng thể đo lường mức độ thân thiết.        | Cập nhật sau mỗi phiên.                            |  |
-| `friendship_level`      | String             | Cấp độ tình bạn:`STRANGER`, `ACQUAINTANCE`, `FRIEND`. | Tự động cập nhật dựa trên `friendship_score`. |  |
+| `friendship_level`      | String             | Cấp độ tình bạn:`PHASE1_STRANGER`, `PHASE2_ACQUAINTANCE`, `PHASE3_FRIEND`. | Tự động cập nhật dựa trên `friendship_score`. |  |
 | `last_interaction_date` | ISO 8601 Timestamp | Dấu thời gian của lần tương tác cuối cùng.              | Cập nhật sau mỗi phiên.                            |  |
 | `streak_day`            | Integer            | Số ngày tương tác liên tiếp.                              | Cập nhật sau mỗi phiên.                            |  |
 | `topic_metrics`         | Object / Map       | Lưu trữ điểm và lịch sử tương tác cho từng chủ đề. | Cập nhật sau mỗi phiên.                            |  |
@@ -85,7 +85,7 @@ Cấu trúc dữ liệu sẽ được lưu trong một cơ sở dữ liệu SQL 
 {
   "user_id": "user_123",
   "friendship_score": 785.5, // Đã được cập nhật sau phiên gần nhất
-  "friendship_level": "ACQUAINTANCE",
+  "friendship_level": "PHASE2_ACQUAINTANCE",
   "last_interaction_date": "2025-11-25T18:30:00Z",
   "streak_day": 6, // Tăng lên vì hôm qua cũng tương tác
   "topic_metrics": {
@@ -261,9 +261,9 @@ flowchart TD
     Step1 --> LoadData[Tải friendship_status]
     LoadData --> DeterminePhase{Xác định Phase<br/>dựa trên friendship_score}
   
-    DeterminePhase -->|score < 500| Phase1[Phase 1: STRANGER]
-    DeterminePhase -->|500 ≤ score ≤ 3000| Phase2[Phase 2: ACQUAINTANCE]
-    DeterminePhase -->|score > 3000| Phase3[Phase 3: FRIEND]
+    DeterminePhase -->|score < 500| Phase1[Phase 1: PHASE1_STRANGER]
+    DeterminePhase -->|500 ≤ score ≤ 3000| Phase2[Phase 2: PHASE2_ACQUAINTANCE]
+    DeterminePhase -->|score > 3000| Phase3[Phase 3: PHASE3_FRIEND]
   
     Phase1 --> Step2[Bước 2: Lọc Kho Hoạt Động]
     Phase2 --> Step2
@@ -317,9 +317,9 @@ flowchart LR
   
     GetScore --> Check{Kiểm tra<br/>friendship_score}
   
-    Check -->|< 500| P1[Phase 1: STRANGER<br/>━━━━━━━━━━<br/>Kho Greeting: V1<br/>Talk: Bề mặt<br/>Game: Đơn giản]
-    Check -->|500-3000| P2[Phase 2: ACQUAINTANCE<br/>━━━━━━━━━━<br/>Kho Greeting: V1+V2<br/>Talk: +Trường học, Bạn bè<br/>Game: +Cá nhân hóa]
-    Check -->|> 3000| P3[Phase 3: FRIEND<br/>━━━━━━━━━━<br/>Kho Greeting: V1+V2+V3<br/>Talk: +Gia đình, Lịch sử<br/>Game: +Dự án chung]
+    Check -->|< 500| P1[Phase 1: PHASE1_STRANGER<br/>━━━━━━━━━━<br/>Kho Greeting: V1<br/>Talk: Bề mặt<br/>Game: Đơn giản]
+    Check -->|500-3000| P2[Phase 2: PHASE2_ACQUAINTANCE<br/>━━━━━━━━━━<br/>Kho Greeting: V1+V2<br/>Talk: +Trường học, Bạn bè<br/>Game: +Cá nhân hóa]
+    Check -->|> 3000| P3[Phase 3: PHASE3_FRIEND<br/>━━━━━━━━━━<br/>Kho Greeting: V1+V2+V3<br/>Talk: +Gia đình, Lịch sử<br/>Game: +Dự án chung]
   
     P1 --> Output([Phase đã xác định])
     P2 --> Output
@@ -526,19 +526,19 @@ sequenceDiagram
 stateDiagram-v2
     [*] --> Stranger: User mới / score = 0
 
-    state "Phase 1: STRANGER" as Stranger {
+    state "Phase 1: PHASE1_STRANGER" as Stranger {
         [*] --> StateS
         StateS: score < 500
         StateS: Greeting: V1\nTalk: Bề mặt\nGame: Đơn giản
     }
 
-    state "Phase 2: ACQUAINTANCE" as Acquaintance {
+    state "Phase 2: PHASE2_ACQUAINTANCE" as Acquaintance {
         [*] --> StateA
         StateA: 500 ≤ score ≤ 3000
         StateA: Greeting: V1+V2\nTalk: +Trường học, Bạn bè\nGame: +Cá nhân hóa
     }
 
-    state "Phase 3: FRIEND" as Friend {
+    state "Phase 3: PHASE3_FRIEND" as Friend {
         [*] --> StateF
         StateF: score > 3000
         StateF: Greeting: V1+V2+V3\nTalk: +Gia đình, Lịch sử\nGame: +Dự án chung
@@ -596,9 +596,9 @@ classDiagram
   
     class Phase {
         <<enumeration>>
-        STRANGER
-        ACQUAINTANCE
-        FRIEND
+        PHASE1_STRANGER
+        PHASE2_ACQUAINTANCE
+        PHASE3_FRIEND
         +getGreetingPool()
         +getTalkPool()
         +getGamePool()
@@ -720,9 +720,9 @@ CREATE TABLE friendship_status (
 
     friendship_score FLOAT DEFAULT 0.0 NOT NULL,
 
-    friendship_level VARCHAR(50) DEFAULT 'STRANGER' NOT NULL,
+    friendship_level VARCHAR(50) DEFAULT 'PHASE1_STRANGER' NOT NULL,
 
-    -- STRANGER (0-99), ACQUAINTANCE (100-499), FRIEND (500+)
+    -- PHASE1_STRANGER (0-99), PHASE2_ACQUAINTANCE (100-499), PHASE3_FRIEND (500+)
 
     last_interaction_date TIMESTAMP WITH TIME ZONE,
 
@@ -759,7 +759,7 @@ CREATE INDEX idx_updated_at ON friendship_status(updated_at DESC);
 | :------------------------ | :----------- | :----------------------------------------------- |
 | `user_id`               | VARCHAR(255) | Primary key, định danh duy nhất của user     |
 | `friendship_score`      | FLOAT        | Điểm tình bạn (cập nhật sau mỗi phiên)   |
-| `friendship_level`      | VARCHAR(50)  | STRANGER / ACQUAINTANCE / FRIEND                 |
+| `friendship_level`      | VARCHAR(50)  | PHASE1_STRANGER / PHASE2_ACQUAINTANCE / PHASE3_FRIEND                 |
 | `last_interaction_date` | TIMESTAMP    | Lần tương tác cuối cùng                    |
 | `streak_day`            | INTEGER      | Số ngày tương tác liên tiếp               |
 | `topic_metrics`         | JSONB        | Điểm và lịch sử tương tác cho mỗi topic |
@@ -772,7 +772,7 @@ CREATE INDEX idx_updated_at ON friendship_status(updated_at DESC);
 {
   "user_id": "user_123",
   "friendship_score": 785.5,
-  "friendship_level": "ACQUAINTANCE",
+  "friendship_level": "PHASE2_ACQUAINTANCE",
   "last_interaction_date": "2025-11-25T18:30:00Z",
   "streak_day": 6,
   "topic_metrics": {
@@ -806,7 +806,7 @@ CREATE TABLE friendship_agent_mapping (
 
     friendship_level VARCHAR(50) NOT NULL,
 
-    -- STRANGER, ACQUAINTANCE, FRIEND
+    -- PHASE1_STRANGER, PHASE2_ACQUAINTANCE, PHASE3_FRIEND
 
   
 
@@ -870,7 +870,7 @@ ON friendship_agent_mapping(topic);
 | Cột                  | Kiểu        | Mô tả                                                          |
 | :-------------------- | :----------- | :--------------------------------------------------------------- |
 | `id`                | SERIAL       | Primary key                                                      |
-| `friendship_level`  | VARCHAR(50)  | STRANGER / ACQUAINTANCE / FRIEND                                 |
+| `friendship_level`  | VARCHAR(50)  | PHASE1_STRANGER / PHASE2_ACQUAINTANCE / PHASE3_FRIEND                                 |
 | `agent_type`        | VARCHAR(50)  | GREETING / TALK / GAME_ACTIVITY                                  |
 | `agent_id`          | VARCHAR(255) | ID duy nhất của agent                                          |
 | `agent_name`        | VARCHAR(255) | Tên agent (hiển thị cho user)                                 |
@@ -883,60 +883,60 @@ ON friendship_agent_mapping(topic);
 **Ví dụ dữ liệu:**
 
 ```sql
--- Greeting agents cho STRANGER
+-- Greeting agents cho PHASE1_STRANGER
 INSERT INTO friendship_agent_mapping (friendship_level, agent_type, agent_id, agent_name, agent_description, weight, is_active)
 VALUES 
-('STRANGER', 'GREETING', 'greeting_welcome', 'Welcome Greeting', 'Chào mừng người dùng mới', 1.0, TRUE),
-('STRANGER', 'GREETING', 'greeting_intro', 'Introduce Pika', 'Giới thiệu về Pika', 1.5, TRUE);
+('PHASE1_STRANGER', 'GREETING', 'greeting_welcome', 'Welcome Greeting', 'Chào mừng người dùng mới', 1.0, TRUE),
+('PHASE1_STRANGER', 'GREETING', 'greeting_intro', 'Introduce Pika', 'Giới thiệu về Pika', 1.5, TRUE);
 
--- Talk agents cho STRANGER
+-- Talk agents cho PHASE1_STRANGER
 INSERT INTO friendship_agent_mapping (friendship_level, agent_type, agent_id, agent_name, agent_description, weight, is_active)
 VALUES 
-('STRANGER', 'TALK', 'talk_hobbies', 'Hobbies Talk', 'Nói về sở thích', 1.0, TRUE),
-('STRANGER', 'TALK', 'talk_school', 'School Life Talk', 'Nói về học tập', 1.0, TRUE),
-('STRANGER', 'TALK', 'talk_pets', 'Pets Talk', 'Nói về thú cưng', 0.8, TRUE);
+('PHASE1_STRANGER', 'TALK', 'talk_hobbies', 'Hobbies Talk', 'Nói về sở thích', 1.0, TRUE),
+('PHASE1_STRANGER', 'TALK', 'talk_school', 'School Life Talk', 'Nói về học tập', 1.0, TRUE),
+('PHASE1_STRANGER', 'TALK', 'talk_pets', 'Pets Talk', 'Nói về thú cưng', 0.8, TRUE);
 
--- Game agents cho STRANGER
+-- Game agents cho PHASE1_STRANGER
 INSERT INTO friendship_agent_mapping (friendship_level, agent_type, agent_id, agent_name, agent_description, weight, is_active)
 VALUES 
-('STRANGER', 'GAME_ACTIVITY', 'game_drawing', 'Drawing Game', 'Trò chơi vẽ', 1.0, TRUE),
-('STRANGER', 'GAME_ACTIVITY', 'game_riddle', 'Riddle Game', 'Trò chơi đố', 0.9, TRUE);
+('PHASE1_STRANGER', 'GAME_ACTIVITY', 'game_drawing', 'Drawing Game', 'Trò chơi vẽ', 1.0, TRUE),
+('PHASE1_STRANGER', 'GAME_ACTIVITY', 'game_riddle', 'Riddle Game', 'Trò chơi đố', 0.9, TRUE);
 
--- Greeting agents cho ACQUAINTANCE
+-- Greeting agents cho PHASE2_ACQUAINTANCE
 INSERT INTO friendship_agent_mapping (friendship_level, agent_type, agent_id, agent_name, agent_description, weight, is_active)
 VALUES 
-('ACQUAINTANCE', 'GREETING', 'greeting_streak_5days', 'Streak 5 Days', 'Chúc mừng 5 ngày liên tiếp', 1.5, TRUE),
-('ACQUAINTANCE', 'GREETING', 'greeting_memory_recall', 'Memory Recall', 'Nhắc lại ký ức chung', 2.0, TRUE);
+('PHASE2_ACQUAINTANCE', 'GREETING', 'greeting_streak_5days', 'Streak 5 Days', 'Chúc mừng 5 ngày liên tiếp', 1.5, TRUE),
+('PHASE2_ACQUAINTANCE', 'GREETING', 'greeting_memory_recall', 'Memory Recall', 'Nhắc lại ký ức chung', 2.0, TRUE);
 
--- Talk agents cho ACQUAINTANCE
+-- Talk agents cho PHASE2_ACQUAINTANCE
 INSERT INTO friendship_agent_mapping (friendship_level, agent_type, agent_id, agent_name, agent_description, weight, is_active)
 VALUES 
-('ACQUAINTANCE', 'TALK', 'talk_movie_preference', 'Movie Preference', 'Nói về phim yêu thích', 1.2, TRUE),
-('ACQUAINTANCE', 'TALK', 'talk_dreams', 'Dreams Talk', 'Nói về ước mơ', 1.0, TRUE);
+('PHASE2_ACQUAINTANCE', 'TALK', 'talk_movie_preference', 'Movie Preference', 'Nói về phim yêu thích', 1.2, TRUE),
+('PHASE2_ACQUAINTANCE', 'TALK', 'talk_dreams', 'Dreams Talk', 'Nói về ước mơ', 1.0, TRUE);
 
--- Game agents cho ACQUAINTANCE
+-- Game agents cho PHASE2_ACQUAINTANCE
 INSERT INTO friendship_agent_mapping (friendship_level, agent_type, agent_id, agent_name, agent_description, weight, is_active)
 VALUES 
-('ACQUAINTANCE', 'GAME_ACTIVITY', 'game_20questions', '20 Questions', 'Trò chơi 20 câu hỏi', 1.0, TRUE),
-('ACQUAINTANCE', 'GAME_ACTIVITY', 'game_story_building', 'Story Building', 'Xây dựng câu chuyện chung', 1.5, TRUE);
+('PHASE2_ACQUAINTANCE', 'GAME_ACTIVITY', 'game_20questions', '20 Questions', 'Trò chơi 20 câu hỏi', 1.0, TRUE),
+('PHASE2_ACQUAINTANCE', 'GAME_ACTIVITY', 'game_story_building', 'Story Building', 'Xây dựng câu chuyện chung', 1.5, TRUE);
 
--- Greeting agents cho FRIEND
+-- Greeting agents cho PHASE3_FRIEND
 INSERT INTO friendship_agent_mapping (friendship_level, agent_type, agent_id, agent_name, agent_description, weight, is_active)
 VALUES 
-('FRIEND', 'GREETING', 'greeting_special_moment', 'Special Moment', 'Khoảnh khắc đặc biệt', 2.0, TRUE),
-('FRIEND', 'GREETING', 'greeting_anniversary', 'Anniversary', 'Kỷ niệm ngày gặp nhau', 2.5, TRUE);
+('PHASE3_FRIEND', 'GREETING', 'greeting_special_moment', 'Special Moment', 'Khoảnh khắc đặc biệt', 2.0, TRUE),
+('PHASE3_FRIEND', 'GREETING', 'greeting_anniversary', 'Anniversary', 'Kỷ niệm ngày gặp nhau', 2.5, TRUE);
 
--- Talk agents cho FRIEND
+-- Talk agents cho PHASE3_FRIEND
 INSERT INTO friendship_agent_mapping (friendship_level, agent_type, agent_id, agent_name, agent_description, weight, is_active)
 VALUES 
-('FRIEND', 'TALK', 'talk_deep_conversation', 'Deep Conversation', 'Cuộc trò chuyện sâu sắc', 1.5, TRUE),
-('FRIEND', 'TALK', 'talk_future_plans', 'Future Plans', 'Nói về kế hoạch tương lai', 1.3, TRUE);
+('PHASE3_FRIEND', 'TALK', 'talk_deep_conversation', 'Deep Conversation', 'Cuộc trò chuyện sâu sắc', 1.5, TRUE),
+('PHASE3_FRIEND', 'TALK', 'talk_future_plans', 'Future Plans', 'Nói về kế hoạch tương lai', 1.3, TRUE);
 
--- Game agents cho FRIEND
+-- Game agents cho PHASE3_FRIEND
 INSERT INTO friendship_agent_mapping (friendship_level, agent_type, agent_id, agent_name, agent_description, weight, is_active)
 VALUES 
-('FRIEND', 'GAME_ACTIVITY', 'game_adventure', 'Adventure Quest', 'Cuộc phiêu lưu chung', 1.5, TRUE),
-('FRIEND', 'GAME_ACTIVITY', 'game_collaborative_art', 'Collaborative Art', 'Tạo tác phẩm nghệ thuật chung', 2.0, TRUE);
+('PHASE3_FRIEND', 'GAME_ACTIVITY', 'game_adventure', 'Adventure Quest', 'Cuộc phiêu lưu chung', 1.5, TRUE),
+('PHASE3_FRIEND', 'GAME_ACTIVITY', 'game_collaborative_art', 'Collaborative Art', 'Tạo tác phẩm nghệ thuật chung', 2.0, TRUE);
 ```
 
 ### 7.3 Bảng phụ 1: agent_prompting để giao tiếp với phía Academy Prompting
@@ -1263,7 +1263,7 @@ VALUES (
 
     'Adventure Quest',
 
-    'Khởi động một trò chơi phiêu lưu chung mang tính "dự án cùng Pika", phù hợp Phase FRIEND.',
+    'Khởi động một trò chơi phiêu lưu chung mang tính "dự án cùng Pika", phù hợp Phase PHASE3_FRIEND.',
 
     $$You are Pika, starting a cooperative adventure game with the child.
 
@@ -1683,9 +1683,9 @@ settings = Settings()
 from enum import Enum
 
 class FriendshipLevel(str, Enum):
-    STRANGER = "STRANGER"
-    ACQUAINTANCE = "ACQUAINTANCE"
-    FRIEND = "FRIEND"
+    PHASE1_STRANGER = "PHASE1_STRANGER"
+    PHASE2_ACQUAINTANCE = "PHASE2_ACQUAINTANCE"
+    PHASE3_FRIEND = "PHASE3_FRIEND"
 
 class AgentType(str, Enum):
     GREETING = "GREETING"
@@ -1693,10 +1693,10 @@ class AgentType(str, Enum):
     GAME_ACTIVITY = "GAME_ACTIVITY"
 
 # Score thresholds
-FRIENDSHIP_SCORE_THRESHOLDS = {
-    FriendshipLevel.STRANGER: (0, 100),
-    FriendshipLevel.ACQUAINTANCE: (100, 500),
-    FriendshipLevel.FRIEND: (500, float('inf'))
+PHASE3_FRIENDSHIP_SCORE_THRESHOLDS = {
+    FriendshipLevel.PHASE1_STRANGER: (0, 100),
+    FriendshipLevel.PHASE2_ACQUAINTANCE: (100, 500),
+    FriendshipLevel.PHASE3_FRIEND: (500, float('inf'))
 }
 ```
 
@@ -1747,7 +1747,7 @@ class FriendshipStatus(BaseModel):
     __tablename__ = "friendship_status"
     user_id = Column(String, primary_key=True)
     friendship_score = Column(Float, default=0.0, nullable=False)
-    friendship_level = Column(String, default="STRANGER", nullable=False)
+    friendship_level = Column(String, default="PHASE1_STRANGER", nullable=False)
     last_interaction_date = Column(DateTime, nullable=True)
     streak_day = Column(Integer, default=0, nullable=False)
     topic_metrics = Column(JSONB, default={}, nullable=False)
@@ -2319,7 +2319,7 @@ curl -X POST http://localhost:8000/v1/friendship/status \
 {
   "user_id": "user_123",
   "friendship_score": 835.5,
-  "friendship_level": "ACQUAINTANCE",
+  "friendship_level": "PHASE2_ACQUAINTANCE",
   "last_interaction_date": "2025-11-25T18:30:00Z",
   "streak_day": 6,
   "total_turns": 67,
@@ -2404,14 +2404,14 @@ curl -X POST http://localhost:8000/v1/activities/suggest \
   }'
 ```
 
-#### Response (200 OK) - User ở ACQUAINTANCE Level
+#### Response (200 OK) - User ở PHASE2_ACQUAINTANCE Level
 
 ```json
 {
   "success": true,
   "data": {
     "user_id": "user_123",
-    "friendship_level": "ACQUAINTANCE",
+    "friendship_level": "PHASE2_ACQUAINTANCE",
     "greeting_agent": {
       "agent_id": "greeting_memory_recall",
       "agent_name": "Memory Recall",
@@ -2486,7 +2486,7 @@ curl -X POST http://localhost:8000/v1/activities/suggest \
 | Field                | Type     | Description                                    |
 | :------------------- | :------- | :--------------------------------------------- |
 | `user_id`          | String   | ID của user                                   |
-| `friendship_level` | String   | STRANGER / ACQUAINTANCE / FRIEND              |
+| `friendship_level` | String   | PHASE1_STRANGER / PHASE2_ACQUAINTANCE / PHASE3_FRIEND              |
 | `greeting_agent`   | Object   | 1 greeting agent được chọn (xem chi tiết bên dưới) |
 | `talk_agents`      | Array    | Danh sách talk agents (thường 2 agents)      |
 | `game_agents`      | Array    | Danh sách game agents (thường 2 agents)      |
@@ -2527,7 +2527,7 @@ GET /agent-mappings
 
 | Parameter            | Type   | Required | Description                                     |
 | :------------------- | :----- | :------- | :---------------------------------------------- |
-| `friendship_level` | String | No       | Lọc theo level: STRANGER, ACQUAINTANCE, FRIEND |
+| `friendship_level` | String | No       | Lọc theo level: PHASE1_STRANGER, PHASE2_ACQUAINTANCE, PHASE3_FRIEND |
 | `agent_type`       | String | No       | Lọc theo loại: GREETING, TALK, GAME_ACTIVITY  |
 
 ###### cURL Examples
@@ -2536,11 +2536,11 @@ GET /agent-mappings
 # Lấy tất cả mappings
 curl -X GET http://localhost:8000/v1/agent-mappings
 
-# Lấy mappings cho STRANGER level
-curl -X GET "http://localhost:8000/v1/agent-mappings?friendship_level=STRANGER"
+# Lấy mappings cho PHASE1_STRANGER level
+curl -X GET "http://localhost:8000/v1/agent-mappings?friendship_level=PHASE1_STRANGER"
 
-# Lấy Greeting agents cho ACQUAINTANCE level
-curl -X GET "http://localhost:8000/v1/agent-mappings?friendship_level=ACQUAINTANCE&agent_type=GREETING"
+# Lấy Greeting agents cho PHASE2_ACQUAINTANCE level
+curl -X GET "http://localhost:8000/v1/agent-mappings?friendship_level=PHASE2_ACQUAINTANCE&agent_type=GREETING"
 ```
 
 ###### Response (200 OK)
@@ -2549,7 +2549,7 @@ curl -X GET "http://localhost:8000/v1/agent-mappings?friendship_level=ACQUAINTAN
 [
   {
     "id": 1,
-    "friendship_level": "STRANGER",
+    "friendship_level": "PHASE1_STRANGER",
     "agent_type": "GREETING",
     "agent_id": "greeting_welcome",
     "agent_name": "Welcome Greeting",
@@ -2559,7 +2559,7 @@ curl -X GET "http://localhost:8000/v1/agent-mappings?friendship_level=ACQUAINTAN
   },
   {
     "id": 2,
-    "friendship_level": "STRANGER",
+    "friendship_level": "PHASE1_STRANGER",
     "agent_type": "GREETING",
     "agent_id": "greeting_intro",
     "agent_name": "Introduce Pika",
@@ -2584,7 +2584,7 @@ POST /agent-mappings
 
 ```json
 {
-  "friendship_level": "FRIEND",
+  "friendship_level": "PHASE3_FRIEND",
   "agent_type": "GREETING",
   "agent_id": "greeting_special_moment",
   "agent_name": "Special Moment",
@@ -2599,7 +2599,7 @@ POST /agent-mappings
 curl -X POST http://localhost:8000/v1/agent-mappings \
   -H "Content-Type: application/json" \
   -d '{
-    "friendship_level": "FRIEND",
+    "friendship_level": "PHASE3_FRIEND",
     "agent_type": "GREETING",
     "agent_id": "greeting_special_moment",
     "agent_name": "Special Moment",
@@ -2613,7 +2613,7 @@ curl -X POST http://localhost:8000/v1/agent-mappings \
 ```json
 {
   "id": 20,
-  "friendship_level": "FRIEND",
+  "friendship_level": "PHASE3_FRIEND",
   "agent_type": "GREETING",
   "agent_id": "greeting_special_moment",
   "agent_name": "Special Moment",
@@ -2664,7 +2664,7 @@ curl -X PUT http://localhost:8000/v1/agent-mappings/20 \
 ```json
 {
   "id": 20,
-  "friendship_level": "FRIEND",
+  "friendship_level": "PHASE3_FRIEND",
   "agent_type": "GREETING",
   "agent_id": "greeting_special_moment",
   "agent_name": "Special Moment",

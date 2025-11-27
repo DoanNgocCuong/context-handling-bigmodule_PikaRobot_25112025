@@ -5,7 +5,7 @@
   - Configure environment variables in .env.example for DATABASE_URL, REDIS_URL, RABBITMQ_URL, API settings
   - Set up logging configuration with structured JSON logging for production
   - Create core/config.py with Pydantic Settings for environment management
-  - Create core/constants.py with FriendshipLevel and AgentType enums and score thresholds
+  - Create core/constants.py with PHRASE3_PHASE3_PHASE3_FRIENDshipLevel and AgentType enums and score thresholds
   - Create core/exceptions.py with custom exception classes
   - _Requirements: 1.1, 1.2, 14.1, 14.5_
 
@@ -14,27 +14,27 @@
     - Write app/models/base.py with BaseModel class
     - _Requirements: 1.1_
   
-  - [ ] 2.2 Create FriendshipStatus model
-    - Write app/models/friendship.py with user_id, friendship_score, friendship_level, last_interaction_date, streak_day, topic_metrics (JSONB) columns
-    - Add CHECK constraints for friendship_score >= 0 and valid friendship_level values
+  - [ ] 2.2 Create PHRASE3_PHASE3_PHASE3_FRIENDshipStatus model
+    - Write app/models/PHRASE3_PHASE3_PHASE3_FRIENDship.py with user_id, PHRASE3_PHASE3_PHASE3_FRIENDship_score, PHRASE3_PHASE3_PHASE3_FRIENDship_level, last_interaction_date, streak_day, topic_metrics (JSONB) columns
+    - Add CHECK constraints for PHRASE3_PHASE3_PHASE3_FRIENDship_score >= 0 and valid PHRASE3_PHASE3_PHASE3_FRIENDship_level values
     - _Requirements: 1.1, 1.3_
   
-  - [ ] 2.3 Create FriendshipAgentMapping model
-    - Write app/models/agent.py with id, friendship_level, agent_type, agent_id, agent_name, agent_description, weight, is_active columns
+  - [ ] 2.3 Create PHRASE3_PHASE3_PHASE3_FRIENDshipAgentMapping model
+    - Write app/models/agent.py with id, PHRASE3_PHASE3_PHASE3_FRIENDship_level, agent_type, agent_id, agent_name, agent_description, weight, is_active columns
     - Add CHECK constraints for valid enum values and weight > 0
-    - Add unique constraint on (friendship_level, agent_type, agent_id)
+    - Add unique constraint on (PHRASE3_PHASE3_PHASE3_FRIENDship_level, agent_type, agent_id)
     - _Requirements: 1.2, 1.4_
   
   - [ ] 2.4 Set up Alembic migrations
     - Initialize Alembic with alembic init migrations
-    - Create migration 001_create_friendship_status_table.py with indexes on friendship_level and last_interaction_date
-    - Create migration 002_create_friendship_agent_mapping_table.py with indexes on friendship_level, agent_type, is_active
+    - Create migration 001_create_PHRASE3_PHASE3_PHASE3_FRIENDship_status_table.py with indexes on PHRASE3_PHASE3_PHASE3_FRIENDship_level and last_interaction_date
+    - Create migration 002_create_PHRASE3_PHASE3_PHASE3_FRIENDship_agent_mapping_table.py with indexes on PHRASE3_PHASE3_PHASE3_FRIENDship_level, agent_type, is_active
     - Test upgrade and downgrade commands
     - _Requirements: 1.5_
 
 - [ ] 3. Create Pydantic schemas for request/response validation
   - Write app/schemas/common.py with base schemas and error response models
-  - Write app/schemas/friendship.py with FriendshipStatusRequest, FriendshipStatusResponse, TopicMetric schemas
+  - Write app/schemas/PHRASE3_PHASE3_PHASE3_FRIENDship.py with PHRASE3_PHASE3_PHASE3_FRIENDshipStatusRequest, PHRASE3_PHASE3_PHASE3_FRIENDshipStatusResponse, TopicMetric schemas
   - Write app/schemas/agent.py with AgentDetail, ActivitySuggestionRequest, ActivitySuggestionResponse schemas
   - Write app/schemas/conversation.py with ConversationEndRequest, ConversationEndResponse schemas
   - Add field validators for user_id minimum length of 3 characters
@@ -50,14 +50,14 @@
     - Write app/db/base_repository.py with generic CRUD operations
     - _Requirements: 1.1_
   
-  - [ ] 4.3 Implement FriendshipRepository
-    - Write app/repositories/friendship_repository.py with get_by_user_id, create_or_update, update_score, update_topic_metrics methods
+  - [ ] 4.3 Implement PHRASE3_PHASE3_PHASE3_FRIENDshipRepository
+    - Write app/repositories/PHRASE3_PHASE3_PHASE3_FRIENDship_repository.py with get_by_user_id, create_or_update, update_score, update_topic_metrics methods
     - Implement JSONB merge logic for topic_metrics updates
     - _Requirements: 6.2, 6.7, 7.2_
   
   - [ ] 4.4 Implement AgentRepository
     - Write app/repositories/agent_repository.py with get_by_level_and_type, get_all_active, soft_delete, bulk_create methods
-    - Implement filtering by friendship_level, agent_type, and is_active status
+    - Implement filtering by PHRASE3_PHASE3_PHASE3_FRIENDship_level, agent_type, and is_active status
     - _Requirements: 8.5, 13.1, 13.4_
 
 - [ ] 5. Implement Redis cache manager
@@ -69,9 +69,9 @@
   - Add logging for cache hits and misses
   - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5_
 
-- [ ] 6. Implement friendship scoring service
+- [ ] 6. Implement PHRASE3_PHASE3_PHASE3_FRIENDship scoring service
   - [ ] 6.1 Create score calculation algorithm
-    - Write app/services/friendship_service.py with calculate_score_change method
+    - Write app/services/PHRASE3_PHASE3_PHASE3_FRIENDship_service.py with calculate_score_change method
     - Implement base_score = total_turns * 0.5
     - Implement engagement_bonus = user_initiated_questions * 3
     - Implement emotion_bonus mapping (interesting: +15, boring: -15, happy: +10, sad: -5, neutral: 0)
@@ -86,10 +86,10 @@
     - Set last_date to current timestamp in ISO 8601 format
     - _Requirements: 5.1, 5.2, 5.3_
   
-  - [ ] 6.3 Implement friendship status update logic
-    - Implement update_friendship_status method
-    - Increment friendship_score by score_change
-    - Update friendship_level based on thresholds (STRANGER: 0-100, ACQUAINTANCE: 100-500, FRIEND: 500+)
+  - [ ] 6.3 Implement PHRASE3_PHASE3_PHASE3_FRIENDship status update logic
+    - Implement update_PHRASE3_PHASE3_PHASE3_FRIENDship_status method
+    - Increment PHRASE3_PHASE3_PHASE3_FRIENDship_score by score_change
+    - Update PHRASE3_PHASE3_PHASE3_FRIENDship_level based on thresholds (PHASE1_PHASE1_STRANGER: 0-100, PHASE2_PHASE2_ACQUAINTANCE: 100-500, PHRASE3_PHASE3_PHASE3_FRIEND: 500+)
     - Merge topic_metrics_update into existing JSONB field
     - _Requirements: 6.2, 6.3, 6.7_
   
@@ -104,7 +104,7 @@
   - [ ] 7.1 Create greeting agent selection
     - Write app/services/selection_service.py with select_greeting_agent method
     - Implement priority logic: birthday > returning user > emotion-based > memory recall > weighted random
-    - Filter by friendship_level and is_active = true
+    - Filter by PHRASE3_PHASE3_PHASE3_FRIENDship_level and is_active = true
     - Include reason field in response
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
   
@@ -120,7 +120,7 @@
     - Implement select_game_agents method
     - Use weighted random selection based on weight field
     - Ensure no duplicate agents
-    - Filter by friendship_level and is_active = true
+    - Filter by PHRASE3_PHASE3_PHASE3_FRIENDship_level and is_active = true
     - Include reason field in response
     - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5_
   
@@ -132,7 +132,7 @@
   - [ ] 7.5 Create candidate computation and caching
     - Implement compute_candidates method that calls select_greeting_agent, select_talk_agents, select_game_agents
     - Integrate with CacheManager to cache results with 6-hour TTL
-    - Invalidate cache when friendship_level changes
+    - Invalidate cache when PHRASE3_PHASE3_PHASE3_FRIENDship_level changes
     - _Requirements: 8.2, 8.3, 12.2, 12.3_
 
 - [ ] 8. Implement message queue integration
@@ -167,20 +167,20 @@
     - Handle queue unavailable error with 503 and retry-after header
     - _Requirements: 2.1, 2.2, 2.3, 2.4_
   
-  - [ ] 9.3 Implement friendship status endpoint
-    - Write app/api/v1/endpoints/friendship.py with POST /friendship/status
+  - [ ] 9.3 Implement PHRASE3_PHASE3_PHASE3_FRIENDship status endpoint
+    - Write app/api/v1/endpoints/PHRASE3_PHASE3_PHASE3_FRIENDship.py with POST /PHRASE3_PHASE3_PHASE3_FRIENDship/status
     - Validate user_id with minimum length 3 characters
-    - Query FriendshipRepository for user data
+    - Query PHRASE3_PHASE3_PHASE3_FRIENDshipRepository for user data
     - Return 404 if user not found
-    - Return friendship_score, friendship_level, last_interaction_date, streak_day, total_turns, topic_metrics
+    - Return PHRASE3_PHASE3_PHASE3_FRIENDship_score, PHRASE3_PHASE3_PHASE3_FRIENDship_level, last_interaction_date, streak_day, total_turns, topic_metrics
     - Ensure response time < 200ms using database indexes
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 14.4_
   
-  - [ ] 9.4 Implement friendship update endpoint (AI Service only)
-    - Add POST /friendship/update endpoint in app/api/v1/endpoints/friendship.py
-    - Accept user_id, friendship_score_change, topic_metrics_update
-    - Call FriendshipService.update_friendship_status
-    - Invalidate cache if friendship_level changed
+  - [ ] 9.4 Implement PHRASE3_PHASE3_PHASE3_FRIENDship update endpoint (AI Service only)
+    - Add POST /PHRASE3_PHASE3_PHASE3_FRIENDship/update endpoint in app/api/v1/endpoints/PHRASE3_PHASE3_PHASE3_FRIENDship.py
+    - Accept user_id, PHRASE3_PHASE3_PHASE3_FRIENDship_score_change, topic_metrics_update
+    - Call PHRASE3_PHASE3_PHASE3_FRIENDshipService.update_PHRASE3_PHASE3_PHASE3_FRIENDship_status
+    - Invalidate cache if PHRASE3_PHASE3_PHASE3_FRIENDship_level changed
     - _Requirements: 6.1, 6.2, 6.3, 12.3_
   
   - [ ] 9.5 Implement activity suggestion endpoint
@@ -192,7 +192,7 @@
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 12.4, 12.5_
   
   - [ ] 9.6 Implement agent mapping CRUD endpoints
-    - Add GET /agent-mappings with query filters for friendship_level and agent_type
+    - Add GET /agent-mappings with query filters for PHRASE3_PHASE3_PHASE3_FRIENDship_level and agent_type
     - Add POST /agent-mappings for creating new mappings
     - Add PUT /agent-mappings/{id} for updating mappings
     - Add DELETE /agent-mappings/{id} for soft delete (set is_active = false)
@@ -219,16 +219,16 @@
   - Implement ErrorResponse schema with error, message, details, timestamp, request_id fields
   - Add request_id middleware for tracing
   - Configure logging to include request_id, user_id, endpoint, error message
-  - Log all friendship level transitions
+  - Log all PHRASE3_PHASE3_PHASE3_FRIENDship level transitions
   - Log all cache invalidations
   - Return 400 for invalid input, 404 for not found, 500 for internal errors, 503 for service unavailable, 504 for timeout
   - _Requirements: 14.1, 14.2, 14.3, 14.5_
 
 - [ ] 11. Create seed data script
-  - Write scripts/seed_agents.py to populate friendship_agent_mapping table
-  - Add 5-10 agents for STRANGER level (2-3 Greeting, 3-5 Talk, 2-3 Game)
-  - Add 8-12 agents for ACQUAINTANCE level (2-3 Greeting, 4-6 Talk, 2-3 Game)
-  - Add 10-15 agents for FRIEND level (3-4 Greeting, 5-8 Talk, 2-3 Game)
+  - Write scripts/seed_agents.py to populate PHRASE3_PHASE3_PHASE3_FRIENDship_agent_mapping table
+  - Add 5-10 agents for PHASE1_PHASE1_STRANGER level (2-3 Greeting, 3-5 Talk, 2-3 Game)
+  - Add 8-12 agents for PHASE2_PHASE2_ACQUAINTANCE level (2-3 Greeting, 4-6 Talk, 2-3 Game)
+  - Add 10-15 agents for PHRASE3_PHASE3_PHASE3_FRIEND level (3-4 Greeting, 5-8 Talk, 2-3 Game)
   - Set appropriate weights (1.0-2.0) for each agent
   - _Requirements: 1.2_
 
@@ -249,7 +249,7 @@
   - _Requirements: 1.1_
 
 - [ ]* 14. Write unit tests for core logic
-  - Write tests/unit/test_friendship_service.py for score calculation, topic metrics, streak day logic
+  - Write tests/unit/test_PHRASE3_PHASE3_PHASE3_FRIENDship_service.py for score calculation, topic metrics, streak day logic
   - Write tests/unit/test_selection_service.py for greeting, talk, game agent selection
   - Write tests/unit/test_cache_manager.py for cache operations, invalidation, TTL
   - Write tests/unit/test_repositories.py for CRUD operations, JSONB updates
@@ -258,10 +258,10 @@
 
 - [ ]* 15. Write integration tests for API endpoints
   - Write tests/integration/test_conversation_flow.py for full async conversation end flow
-  - Write tests/integration/test_friendship_api.py for status retrieval and update
+  - Write tests/integration/test_PHRASE3_PHASE3_PHASE3_FRIENDship_api.py for status retrieval and update
   - Write tests/integration/test_activity_api.py for cache hit and miss scenarios
   - Write tests/integration/test_agent_mapping_api.py for CRUD operations
-  - Write tests/integration/test_database.py for friendship level transitions, JSONB merge, concurrent updates
+  - Write tests/integration/test_database.py for PHRASE3_PHASE3_PHASE3_FRIENDship level transitions, JSONB merge, concurrent updates
   - _Requirements: 2.1-2.5, 6.1-6.7, 7.1-7.5, 8.1-8.5, 13.1-13.5_
 
 - [ ]* 16. Perform load and performance testing

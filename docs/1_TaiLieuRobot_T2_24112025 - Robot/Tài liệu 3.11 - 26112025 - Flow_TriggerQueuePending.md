@@ -1768,7 +1768,7 @@ Flow bên trong task:
 4. Gọi `FriendshipStatusUpdateService`:
    * Update bảng `friendship_status`:
      * Cộng điểm
-     * Recalculate `friendship_level` (STRANGER/ACQUAINTANCE/FRIEND)
+     * Recalculate `friendship_level` (PHASE1_STRANGER/PHASE2_ACQUAINTANCE/PHASE3_FRIEND)
      * Update `topic_metrics` JSONB.
 5. Gọi `AgentSelectionAlgorithmService`:
    * Dựa vào `friendship_status`, `topic_metrics`, `friendship_agent_mapping`, `agent_prompting`…
@@ -1785,7 +1785,7 @@ Flow bên trong task:
    * `status = 'PROCESSED'`
    * `processed_at = NOW()`
    * `friendship_score_change = 35.5`
-   * `new_friendship_level = 'ACQUAINTANCE'`
+   * `new_friendship_level = 'PHASE2_ACQUAINTANCE'`
 
 => Xử lý  **gần như realtime** , mà  **không cần message queue riêng** .
 

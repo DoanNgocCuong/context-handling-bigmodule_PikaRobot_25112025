@@ -58,7 +58,7 @@ Dự án được chia thành **3 phần chính** và **8 sub-tasks**:
 CREATE TABLE friendship_status (
     user_id VARCHAR(255) PRIMARY KEY,
     friendship_score FLOAT NOT NULL DEFAULT 0.0 CHECK (friendship_score >= 0),
-    friendship_level VARCHAR(50) NOT NULL DEFAULT 'STRANGER' CHECK (friendship_level IN ('STRANGER', 'ACQUAINTANCE', 'FRIEND')),
+    friendship_level VARCHAR(50) NOT NULL DEFAULT 'PHASE1_STRANGER' CHECK (friendship_level IN ('PHASE1_STRANGER', 'PHASE2_ACQUAINTANCE', 'PHASE3_FRIEND')),
     last_interaction_date TIMESTAMP,
     streak_day INTEGER NOT NULL DEFAULT 0,
     topic_metrics JSONB NOT NULL DEFAULT '{}',
@@ -105,7 +105,7 @@ CREATE INDEX idx_last_interaction_date ON friendship_status(last_interaction_dat
 ```sql
 CREATE TABLE friendship_agent_mapping (
     id SERIAL PRIMARY KEY,
-    friendship_level VARCHAR(50) NOT NULL CHECK (friendship_level IN ('STRANGER', 'ACQUAINTANCE', 'FRIEND')),
+    friendship_level VARCHAR(50) NOT NULL CHECK (friendship_level IN ('PHASE1_STRANGER', 'PHASE2_ACQUAINTANCE', 'PHASE3_FRIEND')),
     agent_type VARCHAR(50) NOT NULL CHECK (agent_type IN ('GREETING', 'TALK', 'GAME_ACTIVITY')),
     agent_id VARCHAR(255) NOT NULL,
     agent_name VARCHAR(255) NOT NULL,
@@ -181,11 +181,11 @@ migrations/
 
 - [ ] Script: `scripts/seed_agents.py`
 
-- [ ] Seed data cho STRANGER level (5-10 agents)
+- [ ] Seed data cho PHASE1_STRANGER level (5-10 agents)
 
-- [ ] Seed data cho ACQUAINTANCE level (8-12 agents)
+- [ ] Seed data cho PHASE2_ACQUAINTANCE level (8-12 agents)
 
-- [ ] Seed data cho FRIEND level (10-15 agents)
+- [ ] Seed data cho PHASE3_FRIEND level (10-15 agents)
 
 - [ ] Mỗi level có: 2-3 Greeting agents, 3-5 Talk agents, 2-3 Game agents
 
@@ -193,19 +193,19 @@ migrations/
 
 ```python
 AGENTS_DATA = [
-    # STRANGER Level - Greeting
-    {"friendship_level": "STRANGER", "agent_type": "GREETING", "agent_id": "greeting_welcome", "agent_name": "Welcome", "weight": 1.0},
-    {"friendship_level": "STRANGER", "agent_type": "GREETING", "agent_id": "greeting_intro", "agent_name": "Introduce", "weight": 1.5},
+    # PHASE1_STRANGER Level - Greeting
+    {"friendship_level": "PHASE1_STRANGER", "agent_type": "GREETING", "agent_id": "greeting_welcome", "agent_name": "Welcome", "weight": 1.0},
+    {"friendship_level": "PHASE1_STRANGER", "agent_type": "GREETING", "agent_id": "greeting_intro", "agent_name": "Introduce", "weight": 1.5},
     
-    # STRANGER Level - Talk
-    {"friendship_level": "STRANGER", "agent_type": "TALK", "agent_id": "talk_hobbies", "agent_name": "Hobbies", "weight": 1.0},
-    {"friendship_level": "STRANGER", "agent_type": "TALK", "agent_id": "talk_school", "agent_name": "School", "weight": 1.0},
+    # PHASE1_STRANGER Level - Talk
+    {"friendship_level": "PHASE1_STRANGER", "agent_type": "TALK", "agent_id": "talk_hobbies", "agent_name": "Hobbies", "weight": 1.0},
+    {"friendship_level": "PHASE1_STRANGER", "agent_type": "TALK", "agent_id": "talk_school", "agent_name": "School", "weight": 1.0},
     
-    # STRANGER Level - Game
-    {"friendship_level": "STRANGER", "agent_type": "GAME_ACTIVITY", "agent_id": "game_drawing", "agent_name": "Drawing", "weight": 1.0},
-    {"friendship_level": "STRANGER", "agent_type": "GAME_ACTIVITY", "agent_id": "game_riddle", "agent_name": "Riddle", "weight": 0.9},
+    # PHASE1_STRANGER Level - Game
+    {"friendship_level": "PHASE1_STRANGER", "agent_type": "GAME_ACTIVITY", "agent_id": "game_drawing", "agent_name": "Drawing", "weight": 1.0},
+    {"friendship_level": "PHASE1_STRANGER", "agent_type": "GAME_ACTIVITY", "agent_id": "game_riddle", "agent_name": "Riddle", "weight": 0.9},
     
-    # ... more agents for ACQUAINTANCE and FRIEND levels
+    # ... more agents for PHASE2_ACQUAINTANCE and PHASE3_FRIEND levels
 ]
 ```
 
@@ -872,11 +872,11 @@ def suggest_activities(
 
    - [ ] Script created
 
-   - [ ] STRANGER agents seeded (5-10)
+   - [ ] PHASE1_STRANGER agents seeded (5-10)
 
-   - [ ] ACQUAINTANCE agents seeded (8-12)
+   - [ ] PHASE2_ACQUAINTANCE agents seeded (8-12)
 
-   - [ ] FRIEND agents seeded (10-15)
+   - [ ] PHASE3_FRIEND agents seeded (10-15)
 
    - [ ] Data verified in DB
 

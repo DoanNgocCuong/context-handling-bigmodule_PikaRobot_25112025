@@ -6,7 +6,7 @@ without an actual database. It keeps data in-memory for demo/testing purposes.
 """
 from typing import Dict, Any
 from threading import Lock
-from app.core.constants_enums import FriendshipLevel, FRIENDSHIP_SCORE_THRESHOLDS
+from app.core.constants_enums import FriendshipLevel, PHASE3_FRIENDSHIP_SCORE_THRESHOLDS
 from app.utils.logger_setup import get_logger
 
 logger = get_logger(__name__)
@@ -51,7 +51,7 @@ class FriendshipStatusStoreService:
         status = {
             "user_id": user_id,
             "friendship_score": 0.0,
-            "friendship_level": FriendshipLevel.STRANGER,
+            "friendship_level": FriendshipLevel.PHASE1_STRANGER,
             "last_score_change": 0.0
         }
         self._store[user_id] = status
@@ -59,9 +59,9 @@ class FriendshipStatusStoreService:
     
     def _determine_level(self, score: float) -> FriendshipLevel:
         """Determine friendship level based on score thresholds."""
-        if score >= FRIENDSHIP_SCORE_THRESHOLDS[FriendshipLevel.FRIEND][0]:
-            return FriendshipLevel.FRIEND
-        if score >= FRIENDSHIP_SCORE_THRESHOLDS[FriendshipLevel.ACQUAINTANCE][0]:
-            return FriendshipLevel.ACQUAINTANCE
-        return FriendshipLevel.STRANGER
+        if score >= PHASE3_FRIENDSHIP_SCORE_THRESHOLDS[FriendshipLevel.PHASE3_FRIEND][0]:
+            return FriendshipLevel.PHASE3_FRIEND
+        if score >= PHASE3_FRIENDSHIP_SCORE_THRESHOLDS[FriendshipLevel.PHASE2_ACQUAINTANCE][0]:
+            return FriendshipLevel.PHASE2_ACQUAINTANCE
+        return FriendshipLevel.PHASE1_STRANGER
 

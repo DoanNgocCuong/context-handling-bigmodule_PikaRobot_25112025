@@ -115,7 +115,7 @@ Từ góc độ người dùng, họ không thấy Master Orchestration hoạt �
 
 1. **Query Friendship-Status DB:** Lấy toàn bộ bản ghi `friendship_status` của `user_id`. Đây là nguồn dữ liệu cốt lõi về mối quan hệ và sở thích của trẻ.
   - `friendship_score`: Điểm số tổng thể đo lường mức độ thân thiết.
-  - `friendship_level`: Cấp độ tình bạn (`STRANGER`, `ACQUAINTANCE`, `FRIEND`).
+  - `friendship_level`: Cấp độ tình bạn (`PHASE1_STRANGER`, `PHASE2_ACQUAINTANCE`, `PHASE3_FRIEND`).
   - `last_interaction_date`: Dấu thời gian của lần tương tác cuối cùng.
   - `streak_day`: Số ngày tương tác liên tiếp.
   - `topic_metrics`: Điểm và lịch sử tương tác cho từng chủ đề.
@@ -144,7 +144,7 @@ Từ góc độ người dùng, họ không thấy Master Orchestration hoạt �
   "friendship_status": {
     "user_id": "user_123",
     "friendship_score": 750.5,
-    "friendship_level": "ACQUAINTANCE",
+    "friendship_level": "PHASE2_ACQUAINTANCE",
     "last_interaction_date": "2025-11-23T15:00:00Z",
     "streak_day": 5,
     "topic_metrics": {
@@ -701,7 +701,7 @@ Xây dựng một framework để A/B test các bộ Guiding Principles khác nh
 - **Input:** `user_id: "user_123"`, `context: {topic: "dinosaurs"}`
 
 - **Logic:**
-    1. Phase của user_123 là `ACQUAINTANCE`.
+    1. Phase của user_123 là `PHASE2_ACQUAINTANCE`.
     2. Lọc các game trong kho của Phase Acquaintance.
     3. Tìm thấy ứng viên `game_dino_quiz_4` khớp với context `topic: "dinosaurs"`.
     4. Kiểm tra chống lặp, thấy chưa có trong list.

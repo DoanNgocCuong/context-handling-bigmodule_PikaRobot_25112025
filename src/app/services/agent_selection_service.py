@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 from app.repositories.friendship_status_repository import FriendshipStatusRepository
 from app.repositories.friendship_agent_mapping_repository import FriendshipAgentMappingRepository
 from app.repositories.agent_prompting_repository import AgentPromptingRepository
-from app.core.constants_enums import FriendshipLevel, AgentType, FRIENDSHIP_SCORE_THRESHOLDS
+from app.core.constants_enums import FriendshipLevel, AgentType, PHASE3_FRIENDSHIP_SCORE_THRESHOLDS
 from app.core.exceptions_custom import FriendshipNotFoundError, AgentSelectionError
 from app.utils.logger_setup import get_logger
 
@@ -58,10 +58,10 @@ class AgentSelectionService:
         Xác định friendship level dựa trên friendship_score.
         
         Phương thức này sử dụng các ngưỡng điểm được định nghĩa trong
-        FRIENDSHIP_SCORE_THRESHOLDS để xác định level:
-        - STRANGER: score < 500
-        - ACQUAINTANCE: 500 <= score <= 3000
-        - FRIEND: score > 3000
+        PHASE3_FRIENDSHIP_SCORE_THRESHOLDS để xác định level:
+        - PHASE1_STRANGER: score < 500
+        - PHASE2_ACQUAINTANCE: 500 <= score <= 3000
+        - PHASE3_FRIEND: score > 3000
         
         Args:
             score: Điểm friendship_score của user
@@ -72,13 +72,13 @@ class AgentSelectionService:
         Example:
             >>> service = AgentSelectionService(db)
             >>> level = service.determine_level(850.5)
-            >>> print(level)  # FriendshipLevel.ACQUAINTANCE
+            >>> print(level)  # FriendshipLevel.PHASE2_ACQUAINTANCE
         """
-        if score >= FRIENDSHIP_SCORE_THRESHOLDS[FriendshipLevel.FRIEND][0]:
-            return FriendshipLevel.FRIEND
-        if score >= FRIENDSHIP_SCORE_THRESHOLDS[FriendshipLevel.ACQUAINTANCE][0]:
-            return FriendshipLevel.ACQUAINTANCE
-        return FriendshipLevel.STRANGER
+        if score >= PHASE3_FRIENDSHIP_SCORE_THRESHOLDS[FriendshipLevel.PHASE3_FRIEND][0]:
+            return FriendshipLevel.PHASE3_FRIEND
+        if score >= PHASE3_FRIENDSHIP_SCORE_THRESHOLDS[FriendshipLevel.PHASE2_ACQUAINTANCE][0]:
+            return FriendshipLevel.PHASE2_ACQUAINTANCE
+        return FriendshipLevel.PHASE1_STRANGER
 
     def _enrich_agent_data(
         self, 
@@ -146,7 +146,7 @@ class AgentSelectionService:
         Sau khi chọn, agent data sẽ được enrich với description và prompt.
         
         Args:
-            friendship_level: Friendship level của user (STRANGER/ACQUAINTANCE/FRIEND)
+            friendship_level: Friendship level của user (PHASE1_STRANGER/PHASE2_ACQUAINTANCE/PHASE3_FRIEND)
             status: FriendshipStatus object chứa thông tin user
             
         Returns:
@@ -159,7 +159,7 @@ class AgentSelectionService:
             ValueError: Nếu không có greeting agent nào được config cho level này
             
         Example:
-            >>> level = FriendshipLevel.ACQUAINTANCE
+            >>> level = FriendshipLevel.PHASE2_ACQUAINTANCE
             >>> status = friendship_status_object
             >>> greeting = service.select_greeting_agent(level, status)
             >>> print(greeting["agent_id"])  # "greeting_memory_recall"
@@ -217,7 +217,7 @@ class AgentSelectionService:
             - metadata: topic_score, total_turns, selection_score
             
         Example:
-            >>> level = FriendshipLevel.ACQUAINTANCE
+            >>> level = FriendshipLevel.PHASE2_ACQUAINTANCE
             >>> status = friendship_status_object
             >>> talk_agents = service.select_talk_agents(level, status, count=2)
             >>> print(len(talk_agents))  # 2
@@ -278,7 +278,7 @@ class AgentSelectionService:
             AgentSelectionError: Nếu không có game agent nào được config cho level này
             
         Example:
-            >>> level = FriendshipLevel.ACQUAINTANCE
+            >>> level = FriendshipLevel.PHASE2_ACQUAINTANCE
             >>> game_agents = service.select_game_agents(level, count=2)
             >>> print(len(game_agents))  # 2
         """
@@ -317,7 +317,7 @@ class AgentSelectionService:
         Returns:
             Dictionary chứa:
             - user_id: ID của user
-            - friendship_level: Level hiện tại (STRANGER/ACQUAINTANCE/FRIEND)
+            - friendship_level: Level hiện tại (PHASE1_STRANGER/PHASE2_ACQUAINTANCE/PHASE3_FRIEND)
             - greeting_agent: 1 greeting agent đã được enrich
             - talk_agents: List các talk agents đã được enrich (thường 2)
             - game_agents: List các game agents đã được enrich (thường 2)
@@ -329,7 +329,7 @@ class AgentSelectionService:
         Example:
             >>> service = AgentSelectionService(db)
             >>> candidates = service.compute_candidates("user_123")
-            >>> print(candidates["friendship_level"])  # "ACQUAINTANCE"
+            >>> print(candidates["friendship_level"])  # "PHASE2_ACQUAINTANCE"
             >>> print(len(candidates["talk_agents"]))  # 2
         """
         status = self.status_repo.get_by_user_id(user_id)

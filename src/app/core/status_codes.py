@@ -19,7 +19,7 @@ HTTP_503_SERVICE_UNAVAILABLE = 503
 ERROR_MESSAGES: Dict[str, str] = {
     "USER_NOT_FOUND": "User not found",
     "INVALID_USER_ID": "Invalid user_id format",
-    "FRIENDSHIP_NOT_FOUND": "Friendship status not found",
+    "PHASE3_FRIENDSHIP_NOT_FOUND": "Friendship status not found",
     "CONVERSATION_NOT_FOUND": "Conversation not found",
     "CONVERSATION_EVENT_EXISTS": "Conversation event already exists",
     "CONVERSATION_EVENT_INVALID": "Conversation event payload invalid",
@@ -37,7 +37,7 @@ class StatusCode:
     """Status code constants for API responses."""
     USER_NOT_FOUND = "USER_NOT_FOUND"
     INVALID_USER_ID = "INVALID_USER_ID"
-    FRIENDSHIP_NOT_FOUND = "FRIENDSHIP_NOT_FOUND"
+    PHASE3_FRIENDSHIP_NOT_FOUND = "PHASE3_FRIENDSHIP_NOT_FOUND"
     CONVERSATION_NOT_FOUND = "CONVERSATION_NOT_FOUND"
     CONVERSATION_EVENT_EXISTS = "CONVERSATION_EVENT_EXISTS"
     CONVERSATION_EVENT_INVALID = "CONVERSATION_EVENT_INVALID"

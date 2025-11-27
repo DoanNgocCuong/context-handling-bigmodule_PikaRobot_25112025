@@ -189,9 +189,9 @@ settings = Settings()
 from enum import Enum
 
 class FriendshipLevel(str, Enum):
-    STRANGER = "STRANGER"
-    ACQUAINTANCE = "ACQUAINTANCE"
-    FRIEND = "FRIEND"
+    PHASE1_STRANGER = "PHASE1_STRANGER"
+    PHASE2_ACQUAINTANCE = "PHASE2_ACQUAINTANCE"
+    PHASE3_FRIEND = "PHASE3_FRIEND"
 
 class AgentType(str, Enum):
     GREETING = "GREETING"
@@ -199,10 +199,10 @@ class AgentType(str, Enum):
     GAME_ACTIVITY = "GAME_ACTIVITY"
 
 # Score thresholds
-FRIENDSHIP_SCORE_THRESHOLDS = {
-    FriendshipLevel.STRANGER: (0, 100),
-    FriendshipLevel.ACQUAINTANCE: (100, 500),
-    FriendshipLevel.FRIEND: (500, float('inf'))
+PHASE3_FRIENDSHIP_SCORE_THRESHOLDS = {
+    FriendshipLevel.PHASE1_STRANGER: (0, 100),
+    FriendshipLevel.PHASE2_ACQUAINTANCE: (100, 500),
+    FriendshipLevel.PHASE3_FRIEND: (500, float('inf'))
 }
 ```
 
@@ -253,7 +253,7 @@ class FriendshipStatus(BaseModel):
     __tablename__ = "friendship_status"
     user_id = Column(String, primary_key=True)
     friendship_score = Column(Float, default=0.0, nullable=False)
-    friendship_level = Column(String, default="STRANGER", nullable=False)
+    friendship_level = Column(String, default="PHASE1_STRANGER", nullable=False)
     last_interaction_date = Column(DateTime, nullable=True)
     streak_day = Column(Integer, default=0, nullable=False)
     topic_metrics = Column(JSONB, default={}, nullable=False)
@@ -827,7 +827,7 @@ curl -X POST http://localhost:8000/v1/friendship/status \
 {
   "user_id": "user_123",
   "friendship_score": 835.5,
-  "friendship_level": "ACQUAINTANCE",
+  "friendship_level": "PHASE2_ACQUAINTANCE",
   "last_interaction_date": "2025-11-25T18:30:00Z",
   "streak_day": 6,
   "total_turns": 67,
@@ -912,16 +912,16 @@ curl -X POST http://localhost:8000/v1/activities/suggest \
   }'
 ```
 
-#### Response (200 OK) - User ở ACQUAINTANCE Level
+#### Response (200 OK) - User ở PHASE2_ACQUAINTANCE Level
 
 ```json
 {
   "user_id": "user_123",
-  "friendship_level": "ACQUAINTANCE",
+  "friendship_level": "PHASE2_ACQUAINTANCE",
   "computed_at": "2025-11-25T18:30:00Z",
   "greeting_agent": {
     "id": 8,
-    "friendship_level": "ACQUAINTANCE",
+    "friendship_level": "PHASE2_ACQUAINTANCE",
     "agent_type": "GREETING",
     "agent_id": "greeting_memory_recall",
     "agent_name": "Memory Recall",
@@ -933,7 +933,7 @@ curl -X POST http://localhost:8000/v1/activities/suggest \
   "talk_agents": [
     {
       "id": 10,
-      "friendship_level": "ACQUAINTANCE",
+      "friendship_level": "PHASE2_ACQUAINTANCE",
       "agent_type": "TALK",
       "agent_id": "talk_movie_preference",
       "agent_name": "Movie Preference",
@@ -946,7 +946,7 @@ curl -X POST http://localhost:8000/v1/activities/suggest \
     },
     {
       "id": 11,
-      "friendship_level": "ACQUAINTANCE",
+      "friendship_level": "PHASE2_ACQUAINTANCE",
       "agent_type": "TALK",
       "agent_id": "talk_dreams",
       "agent_name": "Dreams Talk",
@@ -961,7 +961,7 @@ curl -X POST http://localhost:8000/v1/activities/suggest \
   "game_agents": [
     {
       "id": 12,
-      "friendship_level": "ACQUAINTANCE",
+      "friendship_level": "PHASE2_ACQUAINTANCE",
       "agent_type": "GAME_ACTIVITY",
       "agent_id": "game_20questions",
       "agent_name": "20 Questions",
@@ -972,7 +972,7 @@ curl -X POST http://localhost:8000/v1/activities/suggest \
     },
     {
       "id": 13,
-      "friendship_level": "ACQUAINTANCE",
+      "friendship_level": "PHASE2_ACQUAINTANCE",
       "agent_type": "GAME_ACTIVITY",
       "agent_id": "game_story_building",
       "agent_name": "Story Building",
@@ -990,7 +990,7 @@ curl -X POST http://localhost:8000/v1/activities/suggest \
 | Field                | Type     | Description                         |
 | :------------------- | :------- | :---------------------------------- |
 | `user_id`          | String   | ID của user                        |
-| `friendship_level` | String   | STRANGER / ACQUAINTANCE / FRIEND    |
+| `friendship_level` | String   | PHASE1_STRANGER / PHASE2_ACQUAINTANCE / PHASE3_FRIEND    |
 | `computed_at`      | DateTime | Thời điểm tính toán candidates |
 | `greeting_agent`   | Object   | 1 greeting agent được chọn      |
 | `talk_agents`      | Array    | Danh sách talk agents (2-3 cái)   |
@@ -1015,7 +1015,7 @@ GET /agent-mappings
 
 | Parameter            | Type   | Required | Description                                     |
 | :------------------- | :----- | :------- | :---------------------------------------------- |
-| `friendship_level` | String | No       | Lọc theo level: STRANGER, ACQUAINTANCE, FRIEND |
+| `friendship_level` | String | No       | Lọc theo level: PHASE1_STRANGER, PHASE2_ACQUAINTANCE, PHASE3_FRIEND |
 | `agent_type`       | String | No       | Lọc theo loại: GREETING, TALK, GAME_ACTIVITY  |
 
 ###### cURL Examples
@@ -1024,11 +1024,11 @@ GET /agent-mappings
 # Lấy tất cả mappings
 curl -X GET http://localhost:8000/v1/agent-mappings
 
-# Lấy mappings cho STRANGER level
-curl -X GET "http://localhost:8000/v1/agent-mappings?friendship_level=STRANGER"
+# Lấy mappings cho PHASE1_STRANGER level
+curl -X GET "http://localhost:8000/v1/agent-mappings?friendship_level=PHASE1_STRANGER"
 
-# Lấy Greeting agents cho ACQUAINTANCE level
-curl -X GET "http://localhost:8000/v1/agent-mappings?friendship_level=ACQUAINTANCE&agent_type=GREETING"
+# Lấy Greeting agents cho PHASE2_ACQUAINTANCE level
+curl -X GET "http://localhost:8000/v1/agent-mappings?friendship_level=PHASE2_ACQUAINTANCE&agent_type=GREETING"
 ```
 
 ###### Response (200 OK)
@@ -1037,7 +1037,7 @@ curl -X GET "http://localhost:8000/v1/agent-mappings?friendship_level=ACQUAINTAN
 [
   {
     "id": 1,
-    "friendship_level": "STRANGER",
+    "friendship_level": "PHASE1_STRANGER",
     "agent_type": "GREETING",
     "agent_id": "greeting_welcome",
     "agent_name": "Welcome Greeting",
@@ -1047,7 +1047,7 @@ curl -X GET "http://localhost:8000/v1/agent-mappings?friendship_level=ACQUAINTAN
   },
   {
     "id": 2,
-    "friendship_level": "STRANGER",
+    "friendship_level": "PHASE1_STRANGER",
     "agent_type": "GREETING",
     "agent_id": "greeting_intro",
     "agent_name": "Introduce Pika",
@@ -1072,7 +1072,7 @@ POST /agent-mappings
 
 ```json
 {
-  "friendship_level": "FRIEND",
+  "friendship_level": "PHASE3_FRIEND",
   "agent_type": "GREETING",
   "agent_id": "greeting_special_moment",
   "agent_name": "Special Moment",
@@ -1087,7 +1087,7 @@ POST /agent-mappings
 curl -X POST http://localhost:8000/v1/agent-mappings \
   -H "Content-Type: application/json" \
   -d '{
-    "friendship_level": "FRIEND",
+    "friendship_level": "PHASE3_FRIEND",
     "agent_type": "GREETING",
     "agent_id": "greeting_special_moment",
     "agent_name": "Special Moment",
@@ -1101,7 +1101,7 @@ curl -X POST http://localhost:8000/v1/agent-mappings \
 ```json
 {
   "id": 20,
-  "friendship_level": "FRIEND",
+  "friendship_level": "PHASE3_FRIEND",
   "agent_type": "GREETING",
   "agent_id": "greeting_special_moment",
   "agent_name": "Special Moment",
@@ -1152,7 +1152,7 @@ curl -X PUT http://localhost:8000/v1/agent-mappings/20 \
 ```json
 {
   "id": 20,
-  "friendship_level": "FRIEND",
+  "friendship_level": "PHASE3_FRIEND",
   "agent_type": "GREETING",
   "agent_id": "greeting_special_moment",
   "agent_name": "Special Moment",

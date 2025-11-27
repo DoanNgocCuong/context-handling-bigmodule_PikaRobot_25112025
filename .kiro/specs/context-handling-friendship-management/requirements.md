@@ -2,43 +2,43 @@
 
 ## Introduction
 
-This document specifies the requirements for the Context Handling - Friendship Management module for the Pika Robot system. The module manages friendship status between users and the Pika AI companion, tracks interaction metrics, and provides personalized activity recommendations (Greeting, Talk, and Game agents) based on the evolving relationship.
+This document specifies the requirements for the Context Handling - PHRASE3_PHASE3_PHASE3_FRIENDship Management module for the Pika Robot system. The module manages PHRASE3_PHASE3_PHASE3_FRIENDship status between users and the Pika AI companion, tracks interaction metrics, and provides personalized activity recommendations (Greeting, Talk, and Game agents) based on the evolving relationship.
 
 ## Glossary
 
-- **Context Handling Service**: The backend service responsible for managing friendship status, interaction metrics, and activity selection logic
-- **Friendship Status**: A data structure tracking the relationship state between a user and Pika, including score, level, streak, and topic metrics
-- **Friendship Score**: A numerical value (0+) representing the strength of the relationship
-- **Friendship Level**: A categorical classification (STRANGER, ACQUAINTANCE, FRIEND) based on friendship score thresholds
+- **Context Handling Service**: The backend service responsible for managing PHRASE3_PHASE3_PHASE3_FRIENDship status, interaction metrics, and activity selection logic
+- **PHRASE3_PHASE3_PHASE3_FRIENDship Status**: A data structure tracking the relationship state between a user and Pika, including score, level, streak, and topic metrics
+- **PHRASE3_PHASE3_PHASE3_FRIENDship Score**: A numerical value (0+) representing the strength of the relationship
+- **PHRASE3_PHASE3_PHASE3_FRIENDship Level**: A categorical classification (PHASE1_PHASE1_STRANGER, PHASE2_PHASE2_ACQUAINTANCE, PHRASE3_PHASE3_PHASE3_FRIEND) based on PHRASE3_PHASE3_PHASE3_FRIENDship score thresholds
 - **Agent**: A conversational AI component that handles specific interaction types (Greeting, Talk, Game)
 - **Topic Metrics**: JSONB data tracking user engagement with different conversation topics
 - **Streak Day**: Consecutive days of user interaction with Pika
 - **Conversation Log**: A record of turn-by-turn dialogue between user and Pika
 - **Backend Service**: The main application backend that interfaces with the Context Handling Service
-- **AI Scoring Service**: The component that analyzes conversations and calculates friendship score changes
+- **AI Scoring Service**: The component that analyzes conversations and calculates PHRASE3_PHASE3_PHASE3_FRIENDship score changes
 - **Message Queue**: An asynchronous messaging system (RabbitMQ/Kafka) for event-driven processing
 
 ## Requirements
 
 ### Requirement 1: Database Schema Management
 
-**User Story:** As a system administrator, I want a well-structured database schema for friendship data, so that the system can efficiently store and query user relationship information.
+**User Story:** As a system administrator, I want a well-structured database schema for PHRASE3_PHASE3_PHASE3_FRIENDship data, so that the system can efficiently store and query user relationship information.
 
 #### Acceptance Criteria
 
-1. WHEN the system initializes, THE Context Handling Service SHALL create a friendship_status table with columns for user_id (primary key), friendship_score (float, default 0.0), friendship_level (enum: STRANGER/ACQUAINTANCE/FRIEND), last_interaction_date (timestamp), streak_day (integer, default 0), topic_metrics (JSONB), created_at (timestamp), and updated_at (timestamp)
+1. WHEN the system initializes, THE Context Handling Service SHALL create a PHRASE3_PHASE3_PHASE3_FRIENDship_status table with columns for user_id (primary key), PHRASE3_PHASE3_PHASE3_FRIENDship_score (float, default 0.0), PHRASE3_PHASE3_PHASE3_FRIENDship_level (enum: PHASE1_PHASE1_STRANGER/PHASE2_PHASE2_ACQUAINTANCE/PHRASE3_PHASE3_PHASE3_FRIEND), last_interaction_date (timestamp), streak_day (integer, default 0), topic_metrics (JSONB), created_at (timestamp), and updated_at (timestamp)
 
-2. WHEN the system initializes, THE Context Handling Service SHALL create a friendship_agent_mapping table with columns for id (primary key), friendship_level (enum), agent_type (enum: GREETING/TALK/GAME_ACTIVITY), agent_id (string), agent_name (string), agent_description (text), weight (float, default 1.0), is_active (boolean, default true), created_at (timestamp), and updated_at (timestamp)
+2. WHEN the system initializes, THE Context Handling Service SHALL create a PHRASE3_PHASE3_PHASE3_FRIENDship_agent_mapping table with columns for id (primary key), PHRASE3_PHASE3_PHASE3_FRIENDship_level (enum), agent_type (enum: GREETING/TALK/GAME_ACTIVITY), agent_id (string), agent_name (string), agent_description (text), weight (float, default 1.0), is_active (boolean, default true), created_at (timestamp), and updated_at (timestamp)
 
-3. WHEN querying friendship data, THE Context Handling Service SHALL utilize indexes on friendship_level and last_interaction_date columns to optimize query performance
+3. WHEN querying PHRASE3_PHASE3_PHASE3_FRIENDship data, THE Context Handling Service SHALL utilize indexes on PHRASE3_PHASE3_PHASE3_FRIENDship_level and last_interaction_date columns to optimize query performance
 
-4. WHEN inserting agent mappings, THE Context Handling Service SHALL enforce a unique constraint on the combination of friendship_level, agent_type, and agent_id
+4. WHEN inserting agent mappings, THE Context Handling Service SHALL enforce a unique constraint on the combination of PHRASE3_PHASE3_PHASE3_FRIENDship_level, agent_type, and agent_id
 
 5. WHEN managing database schema changes, THE Context Handling Service SHALL use Alembic migration files to version control all schema modifications
 
 ### Requirement 2: Conversation End Event Processing
 
-**User Story:** As a backend developer, I want to notify the system when a conversation ends, so that friendship metrics can be updated asynchronously without blocking the user experience.
+**User Story:** As a backend developer, I want to notify the system when a conversation ends, so that PHRASE3_PHASE3_PHASE3_FRIENDship metrics can be updated asynchronously without blocking the user experience.
 
 #### Acceptance Criteria
 
@@ -54,7 +54,7 @@ This document specifies the requirements for the Context Handling - Friendship M
 
 ### Requirement 3: Conversation Data Retrieval
 
-**User Story:** As an AI scoring service, I want to retrieve complete conversation data by conversation_id, so that I can analyze the interaction and calculate friendship score changes.
+**User Story:** As an AI scoring service, I want to retrieve complete conversation data by conversation_id, so that I can analyze the interaction and calculate PHRASE3_PHASE3_PHASE3_FRIENDship score changes.
 
 #### Acceptance Criteria
 
@@ -68,21 +68,21 @@ This document specifies the requirements for the Context Handling - Friendship M
 
 5. WHEN the conversation data request times out after 30 seconds, THE Backend Service SHALL return a 504 Gateway Timeout error
 
-### Requirement 4: Friendship Score Calculation
+### Requirement 4: PHRASE3_PHASE3_PHASE3_FRIENDship Score Calculation
 
-**User Story:** As an AI scoring service, I want to calculate friendship score changes based on conversation quality, so that the system accurately reflects the relationship strength.
+**User Story:** As an AI scoring service, I want to calculate PHRASE3_PHASE3_PHASE3_FRIENDship score changes based on conversation quality, so that the system accurately reflects the relationship strength.
 
 #### Acceptance Criteria
 
-1. WHEN calculating friendship score change, THE AI Scoring Service SHALL compute base_score as total_turns multiplied by 0.5
+1. WHEN calculating PHRASE3_PHASE3_PHASE3_FRIENDship score change, THE AI Scoring Service SHALL compute base_score as total_turns multiplied by 0.5
 
-2. WHEN calculating friendship score change, THE AI Scoring Service SHALL compute engagement_bonus as user_initiated_questions multiplied by 3
+2. WHEN calculating PHRASE3_PHASE3_PHASE3_FRIENDship score change, THE AI Scoring Service SHALL compute engagement_bonus as user_initiated_questions multiplied by 3
 
-3. WHEN calculating friendship score change, THE AI Scoring Service SHALL apply emotion_bonus of +15 for interesting emotion, -15 for boring emotion, +10 for happy emotion, -5 for sad emotion, and 0 for neutral emotion
+3. WHEN calculating PHRASE3_PHASE3_PHASE3_FRIENDship score change, THE AI Scoring Service SHALL apply emotion_bonus of +15 for interesting emotion, -15 for boring emotion, +10 for happy emotion, -5 for sad emotion, and 0 for neutral emotion
 
-4. WHEN calculating friendship score change, THE AI Scoring Service SHALL compute memory_bonus as new_memories_count multiplied by 5
+4. WHEN calculating PHRASE3_PHASE3_PHASE3_FRIENDship score change, THE AI Scoring Service SHALL compute memory_bonus as new_memories_count multiplied by 5
 
-5. WHEN calculating friendship score change, THE AI Scoring Service SHALL return the sum of base_score, engagement_bonus, emotion_bonus, and memory_bonus, with a minimum value of 0
+5. WHEN calculating PHRASE3_PHASE3_PHASE3_FRIENDship score change, THE AI Scoring Service SHALL return the sum of base_score, engagement_bonus, emotion_bonus, and memory_bonus, with a minimum value of 0
 
 ### Requirement 5: Topic Metrics Update
 
@@ -100,17 +100,17 @@ This document specifies the requirements for the Context Handling - Friendship M
 
 5. WHEN topic metrics do not exist for an agent, THE AI Scoring Service SHALL initialize a new topic entry with score, total_turns, and last_date fields
 
-### Requirement 6: Friendship Status Update
+### Requirement 6: PHRASE3_PHASE3_PHASE3_FRIENDship Status Update
 
-**User Story:** As a backend developer, I want to update user friendship status after conversation analysis, so that the relationship state reflects recent interactions.
+**User Story:** As a backend developer, I want to update user PHRASE3_PHASE3_PHASE3_FRIENDship status after conversation analysis, so that the relationship state reflects recent interactions.
 
 #### Acceptance Criteria
 
-1. WHEN updating friendship status, THE Context Handling Service SHALL provide a POST /friendship/update endpoint that accepts user_id, friendship_score_change, and topic_metrics_update
+1. WHEN updating PHRASE3_PHASE3_PHASE3_FRIENDship status, THE Context Handling Service SHALL provide a POST /PHRASE3_PHASE3_PHASE3_FRIENDship/update endpoint that accepts user_id, PHRASE3_PHASE3_PHASE3_FRIENDship_score_change, and topic_metrics_update
 
-2. WHEN friendship_score_change is applied, THE Context Handling Service SHALL increment the existing friendship_score by the change amount
+2. WHEN PHRASE3_PHASE3_PHASE3_FRIENDship_score_change is applied, THE Context Handling Service SHALL increment the existing PHRASE3_PHASE3_PHASE3_FRIENDship_score by the change amount
 
-3. WHEN friendship_score crosses a threshold, THE Context Handling Service SHALL update friendship_level to STRANGER (0-100), ACQUAINTANCE (100-500), or FRIEND (500+)
+3. WHEN PHRASE3_PHASE3_PHASE3_FRIENDship_score crosses a threshold, THE Context Handling Service SHALL update PHRASE3_PHASE3_PHASE3_FRIENDship_level to PHASE1_PHASE1_STRANGER (0-100), PHASE2_PHASE2_ACQUAINTANCE (100-500), or PHRASE3_PHASE3_PHASE3_FRIEND (500+)
 
 4. WHEN updating on the same calendar day as last_interaction_date, THE Context Handling Service SHALL maintain the current streak_day value
 
@@ -120,19 +120,19 @@ This document specifies the requirements for the Context Handling - Friendship M
 
 7. WHEN topic_metrics_update is provided, THE Context Handling Service SHALL merge the updates into the existing topic_metrics JSONB field
 
-### Requirement 7: Friendship Status Retrieval
+### Requirement 7: PHRASE3_PHASE3_PHASE3_FRIENDship Status Retrieval
 
-**User Story:** As a backend developer, I want to retrieve current friendship status for a user, so that I can display relationship information in the application.
+**User Story:** As a backend developer, I want to retrieve current PHRASE3_PHASE3_PHASE3_FRIENDship status for a user, so that I can display relationship information in the application.
 
 #### Acceptance Criteria
 
-1. WHEN requesting friendship status, THE Backend Service SHALL call POST /friendship/status endpoint with user_id
+1. WHEN requesting PHRASE3_PHASE3_PHASE3_FRIENDship status, THE Backend Service SHALL call POST /PHRASE3_PHASE3_PHASE3_FRIENDship/status endpoint with user_id
 
-2. WHEN a valid user_id is provided, THE Context Handling Service SHALL return friendship_score, friendship_level, last_interaction_date, streak_day, total_turns, and topic_metrics
+2. WHEN a valid user_id is provided, THE Context Handling Service SHALL return PHRASE3_PHASE3_PHASE3_FRIENDship_score, PHRASE3_PHASE3_PHASE3_FRIENDship_level, last_interaction_date, streak_day, total_turns, and topic_metrics
 
 3. WHEN an invalid user_id is provided, THE Context Handling Service SHALL return a 404 Not Found error
 
-4. WHEN retrieving friendship status, THE Context Handling Service SHALL respond within 200 milliseconds by utilizing database indexes
+4. WHEN retrieving PHRASE3_PHASE3_PHASE3_FRIENDship status, THE Context Handling Service SHALL respond within 200 milliseconds by utilizing database indexes
 
 5. WHEN topic_metrics contains data, THE Context Handling Service SHALL include score, total_turns, and last_date for each topic in the response
 
@@ -150,7 +150,7 @@ This document specifies the requirements for the Context Handling - Friendship M
 
 4. WHEN returning activity suggestions, THE Context Handling Service SHALL include exactly 1 greeting_agent, 2 talk_agents, and 2 game_agents
 
-5. WHEN selecting agents, THE Context Handling Service SHALL filter candidates by the user's current friendship_level and agent is_active status
+5. WHEN selecting agents, THE Context Handling Service SHALL filter candidates by the user's current PHRASE3_PHASE3_PHASE3_FRIENDship_level and agent is_active status
 
 ### Requirement 9: Greeting Agent Selection Logic
 
@@ -164,7 +164,7 @@ This document specifies the requirements for the Context Handling - Friendship M
 
 3. WHEN multiple greeting agents have the same weight, THE Context Handling Service SHALL select randomly among them with equal probability
 
-4. WHEN selecting a greeting agent, THE Context Handling Service SHALL only consider agents where friendship_level matches the user's current level and is_active is true
+4. WHEN selecting a greeting agent, THE Context Handling Service SHALL only consider agents where PHRASE3_PHASE3_PHASE3_FRIENDship_level matches the user's current level and is_active is true
 
 5. WHEN returning the selected greeting agent, THE Context Handling Service SHALL include a reason field explaining the selection logic
 
@@ -194,11 +194,11 @@ This document specifies the requirements for the Context Handling - Friendship M
 
 2. WHEN selecting 2 game agents, THE Context Handling Service SHALL ensure no duplicate agents are selected
 
-3. WHEN selecting game agents, THE Context Handling Service SHALL only consider agents where friendship_level matches the user's current level and is_active is true
+3. WHEN selecting game agents, THE Context Handling Service SHALL only consider agents where PHRASE3_PHASE3_PHASE3_FRIENDship_level matches the user's current level and is_active is true
 
 4. WHEN returning selected game agents, THE Context Handling Service SHALL include a reason field indicating the selection purpose (e.g., "Engagement booster")
 
-5. WHEN insufficient game agents exist for the friendship_level, THE Context Handling Service SHALL return all available game agents without error
+5. WHEN insufficient game agents exist for the PHRASE3_PHASE3_PHASE3_FRIENDship_level, THE Context Handling Service SHALL return all available game agents without error
 
 ### Requirement 12: Candidate Caching Mechanism
 
@@ -210,7 +210,7 @@ This document specifies the requirements for the Context Handling - Friendship M
 
 2. WHEN caching candidates, THE Context Handling Service SHALL set a TTL of 6 hours (21600 seconds) by default
 
-3. WHEN friendship_level changes for a user, THE Context Handling Service SHALL invalidate the cached candidates for that user_id
+3. WHEN PHRASE3_PHASE3_PHASE3_FRIENDship_level changes for a user, THE Context Handling Service SHALL invalidate the cached candidates for that user_id
 
 4. WHEN a cache miss occurs, THE Context Handling Service SHALL log the event and compute candidates on-demand
 
@@ -222,15 +222,15 @@ This document specifies the requirements for the Context Handling - Friendship M
 
 #### Acceptance Criteria
 
-1. WHEN listing agent mappings, THE Context Handling Service SHALL provide a GET /agent-mappings endpoint with optional query parameters for friendship_level and agent_type
+1. WHEN listing agent mappings, THE Context Handling Service SHALL provide a GET /agent-mappings endpoint with optional query parameters for PHRASE3_PHASE3_PHASE3_FRIENDship_level and agent_type
 
-2. WHEN creating an agent mapping, THE Context Handling Service SHALL provide a POST /agent-mappings endpoint that accepts friendship_level, agent_type, agent_id, agent_name, agent_description, and weight
+2. WHEN creating an agent mapping, THE Context Handling Service SHALL provide a POST /agent-mappings endpoint that accepts PHRASE3_PHASE3_PHASE3_FRIENDship_level, agent_type, agent_id, agent_name, agent_description, and weight
 
 3. WHEN updating an agent mapping, THE Context Handling Service SHALL provide a PUT /agent-mappings/{mapping_id} endpoint that allows modification of agent_name, agent_description, weight, and is_active fields
 
 4. WHEN deleting an agent mapping, THE Context Handling Service SHALL provide a DELETE /agent-mappings/{mapping_id} endpoint that performs a soft delete by setting is_active to false
 
-5. WHEN creating or updating agent mappings, THE Context Handling Service SHALL validate that weight is greater than 0 and friendship_level and agent_type are valid enum values
+5. WHEN creating or updating agent mappings, THE Context Handling Service SHALL validate that weight is greater than 0 and PHRASE3_PHASE3_PHASE3_FRIENDship_level and agent_type are valid enum values
 
 ### Requirement 14: Error Handling and Validation
 

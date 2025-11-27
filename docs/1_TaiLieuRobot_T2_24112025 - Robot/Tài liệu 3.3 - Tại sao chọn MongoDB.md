@@ -13,7 +13,7 @@ Trong kiến trúc này, MongoDB được đề xuất để làm "bộ não" v�
 | **`friendship_status`** | Lưu trạng thái mối quan hệ của Pika với từng user. Đây là collection được đọc/ghi nhiều nhất. | `{
   "user_id": "user_123",
   "friendship_score": 125.5,
-  "friendship_level": "ACQUAINTANCE",
+  "friendship_level": "PHASE2_ACQUAINTANCE",
   "streak_day": 5,
   "daily_metrics": {
     "total_turns": 30,
@@ -36,7 +36,7 @@ Trong kiến trúc này, MongoDB được đề xuất để làm "bộ não" v�
 | **`activity_pools`** | Kho chứa toàn bộ các Talk Agent và Game Agent có thể được lựa chọn. | `{
   "agent_id": "agent_dino_quiz_4",
   "type": "GameAgent",
-  "required_phase": "ACQUAINTANCE",
+  "required_phase": "PHASE2_ACQUAINTANCE",
   "topic": "dinosaurs"
 }` |
 

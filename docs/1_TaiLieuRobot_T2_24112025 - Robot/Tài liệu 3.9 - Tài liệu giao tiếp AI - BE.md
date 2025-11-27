@@ -53,11 +53,11 @@ curl -X POST http://localhost:8000/v1/activities/suggest \
 ```
 {
   "user_id": "user_123",
-  "friendship_level": "ACQUAINTANCE",
+  "friendship_level": "PHASE2_ACQUAINTANCE",
   "computed_at": "2025-11-25T18:30:00Z",
   "greeting_agent": {
     "id": 8,
-    "friendship_level": "ACQUAINTANCE",
+    "friendship_level": "PHASE2_ACQUAINTANCE",
     "agent_type": "GREETING",
     "agent_id": "greeting_memory_recall",
     "agent_name": "Memory Recall",
@@ -69,7 +69,7 @@ curl -X POST http://localhost:8000/v1/activities/suggest \
   "talk_agents": [
     {
       "id": 10,
-      "friendship_level": "ACQUAINTANCE",
+      "friendship_level": "PHASE2_ACQUAINTANCE",
       "agent_type": "TALK",
       "agent_id": "talk_movie_preference",
       "agent_name": "Movie Preference",
@@ -82,7 +82,7 @@ curl -X POST http://localhost:8000/v1/activities/suggest \
     },
     {
       "id": 11,
-      "friendship_level": "ACQUAINTANCE",
+      "friendship_level": "PHASE2_ACQUAINTANCE",
       "agent_type": "TALK",
       "agent_id": "talk_dreams",
       "agent_name": "Dreams Talk",
@@ -97,7 +97,7 @@ curl -X POST http://localhost:8000/v1/activities/suggest \
   "game_agents": [
     {
       "id": 12,
-      "friendship_level": "ACQUAINTANCE",
+      "friendship_level": "PHASE2_ACQUAINTANCE",
       "agent_type": "GAME_ACTIVITY",
       "agent_id": "game_20questions",
       "agent_name": "20 Questions",
@@ -108,7 +108,7 @@ curl -X POST http://localhost:8000/v1/activities/suggest \
     },
     {
       "id": 13,
-      "friendship_level": "ACQUAINTANCE",
+      "friendship_level": "PHASE2_ACQUAINTANCE",
       "agent_type": "GAME_ACTIVITY",
       "agent_id": "game_story_building",
       "agent_name": "Story Building",

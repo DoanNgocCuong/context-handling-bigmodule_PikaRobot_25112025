@@ -4,8 +4,8 @@
 CREATE TABLE friendship_status (
     user_id VARCHAR(255) PRIMARY KEY,
     friendship_score FLOAT DEFAULT 0.0 NOT NULL,
-    friendship_level VARCHAR(50) DEFAULT 'STRANGER' NOT NULL,
-    -- STRANGER (0-99), ACQUAINTANCE (100-499), FRIEND (500+)
+    friendship_level VARCHAR(50) DEFAULT 'PHASE1_STRANGER' NOT NULL,
+    -- PHASE1_STRANGER (0-99), PHASE2_ACQUAINTANCE (100-499), PHASE3_FRIEND (500+)
     last_interaction_date TIMESTAMP WITH TIME ZONE,
     streak_day INTEGER DEFAULT 0 NOT NULL,
     topic_metrics JSONB DEFAULT '{}' NOT NULL,
@@ -29,7 +29,7 @@ CREATE INDEX idx_updated_at ON friendship_status(updated_at DESC);
 CREATE TABLE friendship_agent_mapping (
     id SERIAL PRIMARY KEY,
     friendship_level VARCHAR(50) NOT NULL,
-    -- STRANGER, ACQUAINTANCE, FRIEND
+    -- PHASE1_STRANGER, PHASE2_ACQUAINTANCE, PHASE3_FRIEND
 
     agent_type VARCHAR(50) NOT NULL,
     -- GREETING, TALK, GAME_ACTIVITY

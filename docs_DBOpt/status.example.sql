@@ -8,8 +8,8 @@ Quá chuẩn, schema nhìn rất ổn rồi. Giờ anh lên **example seed cho b
 CREATE TABLE friendship_status (
     user_id VARCHAR(255) PRIMARY KEY,
     friendship_score FLOAT DEFAULT 0.0 NOT NULL,
-    friendship_level VARCHAR(50) DEFAULT 'STRANGER' NOT NULL,
-    -- STRANGER (0-99), ACQUAINTANCE (100-499), FRIEND (500+)
+    friendship_level VARCHAR(50) DEFAULT 'PHASE1_STRANGER' NOT NULL,
+    -- PHASE1_STRANGER (0-99), PHASE2_ACQUAINTANCE (100-499), PHASE3_FRIEND (500+)
     last_interaction_date TIMESTAMPTZ,
     streak_day INTEGER DEFAULT 0 NOT NULL,
     topic_metrics JSONB DEFAULT '{}' NOT NULL,
@@ -26,7 +26,7 @@ CREATE TABLE friendship_status (
 
 ## 🔹 2. Ví dụ dữ liệu seed cho `friendship_status`
 
-### ✅ Case 1: User mới – STRANGER (score thấp)
+### ✅ Case 1: User mới – PHASE1_STRANGER (score thấp)
 
 ```sql
 INSERT INTO friendship_status (
@@ -39,7 +39,7 @@ INSERT INTO friendship_status (
 ) VALUES (
     'user_001',
     20.0,
-    'STRANGER',
+    'PHASE1_STRANGER',
     '2025-11-25T09:05:00Z',
     1,
     '{}'::jsonb
@@ -48,7 +48,7 @@ INSERT INTO friendship_status (
 
 ---
 
-### ✅ Case 2: User tương tác kha khá – ACQUAINTANCE
+### ✅ Case 2: User tương tác kha khá – PHASE2_ACQUAINTANCE
 
 Có vài topic đã có tương tác, giống format trong tài liệu:
 
@@ -63,7 +63,7 @@ INSERT INTO friendship_status (
 ) VALUES (
     'user_002',
     230.5,
-    'ACQUAINTANCE',
+    'PHASE2_ACQUAINTANCE',
     '2025-11-24T15:30:00Z',
     4,
     '{
@@ -83,7 +83,7 @@ INSERT INTO friendship_status (
 
 ---
 
-### ✅ Case 3: User thân – FRIEND (score cao, streak dài)
+### ✅ Case 3: User thân – PHASE3_FRIEND (score cao, streak dài)
 
 ```sql
 INSERT INTO friendship_status (
@@ -96,7 +96,7 @@ INSERT INTO friendship_status (
 ) VALUES (
     'user_003',
     780.0,
-    'FRIEND',
+    'PHASE3_FRIEND',
     '2025-11-25T18:45:00Z',
     12,
     '{
@@ -134,7 +134,7 @@ INSERT INTO friendship_status (
 ) VALUES (
     'user_004',
     120.0,
-    'ACQUAINTANCE',
+    'PHASE2_ACQUAINTANCE',
     '2025-11-23T08:00:00Z',
     7,
     '{

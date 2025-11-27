@@ -40,7 +40,7 @@ class ActivitySuggestionData(BaseModel):
         json_schema_extra = {
             "example": {
                 "user_id": "user_doanngoccuong",
-                "friendship_level": "ACQUAINTANCE",
+                "friendship_level": "PHASE2_ACQUAINTANCE",
                 "greeting_agent": {
                     "agent_id": "greeting_memory_recall",
                     "agent_name": "Memory Recall Greeting",

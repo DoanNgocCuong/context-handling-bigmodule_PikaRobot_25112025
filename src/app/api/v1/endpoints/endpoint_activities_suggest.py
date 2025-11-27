@@ -40,7 +40,7 @@ async def suggest_activities(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={
                 "success": False,
-                "error": "FRIENDSHIP_NOT_FOUND",
+                "error": "PHASE3_FRIENDSHIP_NOT_FOUND",
                 "message": f"Friendship status not found for user {request.user_id}"
             }
         )

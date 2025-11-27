@@ -131,7 +131,7 @@ INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, final_
 VALUES (
     'game_adventure',
     'Adventure Quest',
-    'Khởi động một trò chơi phiêu lưu chung mang tính "dự án cùng Pika", phù hợp Phase FRIEND.',
+    'Khởi động một trò chơi phiêu lưu chung mang tính "dự án cùng Pika", phù hợp Phase PHASE3_FRIEND.',
     $$You are Pika, starting a cooperative adventure game with the child.
 
 Goal:

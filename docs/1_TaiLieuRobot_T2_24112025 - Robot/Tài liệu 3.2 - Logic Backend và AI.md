@@ -12,9 +12,9 @@ flowchart TD
     GetData --> MemoryData[dynamic_memory:<br/>- shared experiences]
     
     FriendshipData --> DeterminePhase{Xác định Phase}
-    DeterminePhase -->|score < 50| Stranger[Phase: STRANGER]
-    DeterminePhase -->|50 ≤ score < 150| Acquaintance[Phase: ACQUAINTANCE]
-    DeterminePhase -->|score ≥ 150| Friend[Phase: FRIEND]
+    DeterminePhase -->|score < 50| Stranger[Phase: PHASE1_STRANGER]
+    DeterminePhase -->|50 ≤ score < 150| Acquaintance[Phase: PHASE2_ACQUAINTANCE]
+    DeterminePhase -->|score ≥ 150| Friend[Phase: PHASE3_FRIEND]
     
     Stranger --> QueryPool1[Query activity_pools]
     Acquaintance --> QueryPool2[Query activity_pools]
@@ -219,9 +219,9 @@ flowchart TD
     
     UpdateFS --> CheckLevel{Kiểm tra ngưỡng}
     
-    CheckLevel -->|score < 50| SetStranger[friendship_level = STRANGER]
-    CheckLevel -->|50 ≤ score < 150| SetAcquaintance[friendship_level = ACQUAINTANCE]
-    CheckLevel -->|score ≥ 150| SetFriend[friendship_level = FRIEND]
+    CheckLevel -->|score < 50| SetStranger[friendship_level = PHASE1_STRANGER]
+    CheckLevel -->|50 ≤ score < 150| SetAcquaintance[friendship_level = PHASE2_ACQUAINTANCE]
+    CheckLevel -->|score ≥ 150| SetFriend[friendship_level = PHASE3_FRIEND]
     
     SetStranger --> UpdateTopic[Cập nhật topic_metrics]
     SetAcquaintance --> UpdateTopic
@@ -296,7 +296,7 @@ graph LR
 
 ```mermaid
 erDiagram
-    FRIENDSHIP_STATUS {
+    PHASE3_FRIENDSHIP_STATUS {
         string user_id PK
         int friendship_score
         string friendship_level
@@ -333,6 +333,6 @@ erDiagram
         int last_used_count
     }
     
-    FRIENDSHIP_STATUS ||--o{ TOPIC_METRICS : has
-    FRIENDSHIP_STATUS ||--o{ MEMORIES : has
+    PHASE3_FRIENDSHIP_STATUS ||--o{ TOPIC_METRICS : has
+    PHASE3_FRIENDSHIP_STATUS ||--o{ MEMORIES : has
 ```

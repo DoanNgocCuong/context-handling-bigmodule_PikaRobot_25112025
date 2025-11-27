@@ -209,9 +209,9 @@ settings = Settings()
 from enum import Enum
 
 class FriendshipLevel(str, Enum):
-    STRANGER = "STRANGER"
-    ACQUAINTANCE = "ACQUAINTANCE"
-    FRIEND = "FRIEND"
+    PHASE1_STRANGER = "PHASE1_STRANGER"
+    PHASE2_ACQUAINTANCE = "PHASE2_ACQUAINTANCE"
+    PHASE3_FRIEND = "PHASE3_FRIEND"
 
 class AgentType(str, Enum):
     GREETING = "GREETING"
@@ -219,10 +219,10 @@ class AgentType(str, Enum):
     GAME_ACTIVITY = "GAME_ACTIVITY"
 
 # Score thresholds
-FRIENDSHIP_SCORE_THRESHOLDS = {
-    FriendshipLevel.STRANGER: (0, 100),
-    FriendshipLevel.ACQUAINTANCE: (100, 500),
-    FriendshipLevel.FRIEND: (500, float('inf'))
+PHASE3_FRIENDSHIP_SCORE_THRESHOLDS = {
+    FriendshipLevel.PHASE1_STRANGER: (0, 100),
+    FriendshipLevel.PHASE2_ACQUAINTANCE: (100, 500),
+    FriendshipLevel.PHASE3_FRIEND: (500, float('inf'))
 }
 ```
 
@@ -273,7 +273,7 @@ class FriendshipStatus(BaseModel):
     __tablename__ = "friendship_status"
     user_id = Column(String, primary_key=True)
     friendship_score = Column(Float, default=0.0, nullable=False)
-    friendship_level = Column(String, default="STRANGER", nullable=False)
+    friendship_level = Column(String, default="PHASE1_STRANGER", nullable=False)
     last_interaction_date = Column(DateTime, nullable=True)
     streak_day = Column(Integer, default=0, nullable=False)
     topic_metrics = Column(JSONB, default={}, nullable=False)
