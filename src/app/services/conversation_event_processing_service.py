@@ -1,7 +1,7 @@
 """
 Service that scans pending conversation events and processes them.
 """
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Any
 
 from sqlalchemy.orm import Session
 
@@ -84,7 +84,8 @@ class ConversationEventProcessingService:
                     event.conversation_id
                 )
                 conversation_log = conversation_data.get("conversation_log", []) if conversation_data else []
-                turns_change = len(conversation_log) // 2  # 1 turn = 1 pair of exchanges
+                # Use same logic as score calculation: count complete turns (pika + user pairs)
+                turns_change = self._count_complete_turns(conversation_log)
                 
                 try:
                     self.status_update_service.update_topic_metrics(
@@ -115,25 +116,55 @@ class ConversationEventProcessingService:
                 logger.warning(
                     f"Could not extract topic_id from bot_id={bot_id} for user_id={event.user_id}, "
                     f"using apply_score_change only"
-                )
-                status = self.status_update_service.apply_score_change(
-                    user_id=event.user_id,
+            )
+            status = self.status_update_service.apply_score_change(
+                user_id=event.user_id,
                     score_change=score_change,
                 )
+
+            # Get calculation details from result
+            calculation_details = calc_result.get("calculation_details")
+            if calculation_details is not None:
+                logger.info(
+                    f"📊 Saving score_calculation_details for conversation_id={event.conversation_id}: "
+                    f"{calculation_details}"
+                )
+            else:
+                logger.warning(
+                    f"⚠️  No calculation_details found in calc_result for conversation_id={event.conversation_id}. "
+                    f"calc_result keys: {list(calc_result.keys())}"
+            )
 
             self.repository.mark_processed(
                 event=event,
                 friendship_score_change=calc_result["friendship_score_change"],
                 friendship_level=status["friendship_level"],
+                score_calculation_details=calculation_details,
             )
             stats["processed"] = 1
         except ConversationNotFoundError as exc:
+            # Rollback transaction nếu bị abort
+            try:
+                self.db.rollback()
+            except Exception:
+                pass  # Ignore rollback errors
             self._handle_failure(event, "CONVERSATION_NOT_FOUND", str(exc))
             stats["failed"] = 1
         except InvalidScoreError as exc:
+            # Rollback transaction nếu bị abort
+            try:
+                self.db.rollback()
+            except Exception:
+                pass  # Ignore rollback errors
             self._handle_failure(event, "INVALID_SCORE", str(exc))
             stats["failed"] = 1
         except Exception as exc:  # pragma: no cover
+            # FIX: Rollback transaction trước khi handle failure
+            # Điều này đảm bảo transaction bị abort được reset
+            try:
+                self.db.rollback()
+            except Exception:
+                pass  # Ignore rollback errors
             self._handle_failure(event, "UNEXPECTED_ERROR", str(exc))
             stats["failed"] = 1
 
@@ -192,7 +223,8 @@ class ConversationEventProcessingService:
                         event.conversation_id
                     )
                     conversation_log = conversation_data.get("conversation_log", []) if conversation_data else []
-                    turns_change = len(conversation_log) // 2  # 1 turn = 1 pair of exchanges
+                    # Use same logic as score calculation: count complete turns (pika + user pairs)
+                    turns_change = self._count_complete_turns(conversation_log)
                     
                     try:
                         self.status_update_service.update_topic_metrics(
@@ -223,16 +255,30 @@ class ConversationEventProcessingService:
                     logger.warning(
                         f"Could not extract topic_id from bot_id={bot_id} for user_id={event.user_id}, "
                         f"using apply_score_change only"
-                    )
-                    status = self.status_update_service.apply_score_change(
-                        user_id=event.user_id,
+                )
+                status = self.status_update_service.apply_score_change(
+                    user_id=event.user_id,
                         score_change=score_change,
                     )
+
+                # Get calculation details from result
+                calculation_details = calc_result.get("calculation_details")
+                if calculation_details is not None:
+                    logger.info(
+                        f"📊 Saving score_calculation_details for conversation_id={event.conversation_id}: "
+                        f"{calculation_details}"
+                    )
+                else:
+                    logger.warning(
+                        f"⚠️  No calculation_details found in calc_result for conversation_id={event.conversation_id}. "
+                        f"calc_result keys: {list(calc_result.keys())}"
+                )
 
                 self.repository.mark_processed(
                     event=event,
                     friendship_score_change=calc_result["friendship_score_change"],
                     friendship_level=status["friendship_level"],
+                    score_calculation_details=calculation_details,
                 )
                 stats["processed"] += 1
 
@@ -252,6 +298,40 @@ class ConversationEventProcessingService:
             stats["failed"],
         )
         return stats
+
+    def _count_complete_turns(self, conversation_log: List[Dict[str, Any]]) -> int:
+        """
+        Đếm số turn hoàn chỉnh (1 turn = 1 cặp pika + user).
+        
+        Logic:
+        - Duyệt conversation_log theo thứ tự
+        - Đếm số cặp liên tiếp (pika, user) hoặc (user, pika)
+        - Bỏ qua các messages đơn lẻ không tạo thành cặp
+        
+        Args:
+            conversation_log: List of conversation messages
+            
+        Returns:
+            Số turn hoàn chỉnh (cặp trao đổi)
+        """
+        if not conversation_log:
+            return 0
+        
+        turns = 0
+        i = 0
+        while i < len(conversation_log) - 1:
+            current_speaker = conversation_log[i].get("speaker", "").lower()
+            next_speaker = conversation_log[i + 1].get("speaker", "").lower()
+            
+            # Kiểm tra nếu là cặp (pika, user) hoặc (user, pika)
+            if (current_speaker == "pika" and next_speaker == "user") or \
+               (current_speaker == "user" and next_speaker == "pika"):
+                turns += 1
+                i += 2  # Bỏ qua cả 2 messages trong cặp
+            else:
+                i += 1  # Chỉ bỏ qua message hiện tại
+        
+        return turns
 
     def _handle_failure(self, event, error_code: str, error_details: str) -> None:
         """Update event as failed and log."""

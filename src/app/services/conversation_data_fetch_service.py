@@ -56,7 +56,9 @@ class ConversationDataFetchService:
         # Try database first
         if self.conversation_repository:
             try:
-                conversation = self.conversation_repository.get_by_id(conversation_id)
+                # FIX: Sử dụng get_by_conversation_id thay vì get_by_id
+                # get_by_id nhận integer (event_id), get_by_conversation_id nhận string (conversation_id)
+                conversation = self.conversation_repository.get_by_conversation_id(conversation_id)
                 if conversation:
                     logger.info(f"Found conversation in database: {conversation_id}")
                     return self._parse_conversation_data(conversation)

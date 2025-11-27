@@ -42,6 +42,15 @@ def transform_conversation_logs(
         logger.warning("Empty conversation_logs provided, returning empty list")
         return []
     
+    # Debug: Đếm số messages theo character type
+    bot_count = sum(1 for item in conversation_logs if "BOT" in item.get("character", "").upper())
+    user_count = sum(1 for item in conversation_logs if "USER" in item.get("character", "").upper())
+    logger.info(
+        f"🔄 Transforming conversation logs | "
+        f"total={len(conversation_logs)} | "
+        f"BOT={bot_count} | USER={user_count}"
+    )
+    
     transformed = []
     total_turns = len(conversation_logs)
     duration_seconds = int((end_time - start_time).total_seconds())
@@ -49,6 +58,7 @@ def transform_conversation_logs(
     # Calculate time increment per turn (for timestamp estimation)
     time_increment = duration_seconds / max(total_turns, 1) if total_turns > 0 else 0
     
+    skipped_count = 0
     for index, log_item in enumerate(conversation_logs):
         # Extract character and content
         character = log_item.get("character", "").strip()
@@ -56,11 +66,21 @@ def transform_conversation_logs(
         
         # Skip empty content
         if not content:
-            logger.debug(f"Skipping empty log item at index {index}")
+            skipped_count += 1
+            logger.debug(
+                f"⏭️  Skipping empty log item | index={index} | character={character}"
+            )
             continue
         
         # Map character to speaker
         speaker = _map_character_to_speaker(character)
+        
+        # Debug: Log mapping
+        if index < 5:  # Log first 5 items for debugging
+            logger.debug(
+                f"🔄 Transform | index={index} | character={character} → speaker={speaker} | "
+                f"content_length={len(content)}"
+            )
         
         # Calculate turn_id (1-indexed)
         turn_id = len(transformed) + 1
@@ -81,9 +101,23 @@ def transform_conversation_logs(
         
         transformed.append(transformed_item)
     
+    # Debug: Đếm số messages theo speaker sau transform
+    pika_count = sum(1 for item in transformed if item.get("speaker") == "pika")
+    user_count = sum(1 for item in transformed if item.get("speaker") == "user")
+    
     logger.info(
-        f"Transformed {len(conversation_logs)} log items to {len(transformed)} standardized items"
+        f"✅ Transformation complete | "
+        f"input={len(conversation_logs)} | "
+        f"output={len(transformed)} | "
+        f"skipped={skipped_count} | "
+        f"pika={pika_count} | user={user_count}"
     )
+    
+    if user_count == 0 and len(conversation_logs) > 0:
+        logger.warning(
+            f"⚠️  WARNING: No USER messages found after transformation! | "
+            f"Check raw_conversation_log for USER_RESPONSE_CONVERSATION items"
+        )
     
     return transformed
 

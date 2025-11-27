@@ -14,6 +14,7 @@ from app.schemas.conversation_event_schemas import (
     ConversationEventCreateResponse,
 )
 from app.services.conversation_event_service import ConversationEventService
+from app.background.rabbitmq_publisher import publish_conversation_event
 from app.utils.logger_setup import get_logger
 
 logger = get_logger(__name__)
@@ -34,17 +35,63 @@ async def create_conversation_event(
     """
     Store a conversation event that backend submits after each session.
 
-    The record is persisted immediately and will be processed asynchronously.
+    The record is persisted immediately, published to RabbitMQ queue,
+    and will be processed asynchronously by background worker.
+    
+    Returns 202 Accepted immediately without waiting for processing.
     """
+    conversation_id = request.conversation_id
+    user_id = request.user_id
+    bot_id = request.bot_id
+    log_count = len(request.conversation_log) if request.conversation_log else 0
+    
+    # 📥 LOG: Nhận request
+    logger.info(
+        f"📥 POST /conversations/end | "
+        f"conversation_id={conversation_id} | "
+        f"user_id={user_id} | "
+        f"bot_id={bot_id} | "
+        f"logs={log_count} items"
+    )
+    
     try:
+        # STEP 1: Create event (save to DB, status=PENDING)
+        logger.debug(f"💾 Saving conversation event to DB: {conversation_id}")
         data = service.create_event(request)
+        logger.info(f"✅ Saved to DB | conversation_id={conversation_id} | event_id={data.get('id')}")
+        
+        # STEP 2: Publish to RabbitMQ queue for async processing
+        logger.debug(f"📤 Publishing to RabbitMQ queue: {conversation_id}")
+        try:
+            await publish_conversation_event(
+                conversation_id=data["conversation_id"],
+                user_id=data["user_id"],
+                bot_id=data["bot_id"],
+                conversation_log=data.get("conversation_log", [])
+            )
+            logger.info(f"✅ Published to queue | conversation_id={conversation_id}")
+        except Exception as publish_error:
+            # Don't fail API if publish fails - background scheduler will retry
+            logger.warning(
+                f"⚠️  Failed to publish to RabbitMQ | conversation_id={conversation_id} | "
+                f"error={str(publish_error)} | Background scheduler will retry"
+            )
+        
+        # STEP 3: Return 202 Accepted immediately
+        logger.info(
+            f"✅ 202 Accepted | conversation_id={conversation_id} | "
+            f"response_time=<100ms (async processing)"
+        )
         return ConversationEventCreateResponse(
             success=True,
             message="Conversation event accepted for processing",
             data=data,
         )
     except ConversationEventAlreadyExistsError as exc:
-        logger.warning("Duplicate conversation event: %s", exc)
+        logger.warning(
+            f"❌ 409 Conflict | conversation_id={conversation_id} | "
+            f"error=Duplicate conversation event"
+        )
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail={
@@ -54,7 +101,10 @@ async def create_conversation_event(
             },
         ) from exc
     except ConversationEventValidationError as exc:
-        logger.warning("Invalid conversation event payload: %s", exc)
+        logger.warning(
+            f"❌ 400 Bad Request | conversation_id={conversation_id} | "
+            f"error=Invalid payload: {str(exc)}"
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={
@@ -64,7 +114,11 @@ async def create_conversation_event(
             },
         ) from exc
     except Exception as exc:  # pragma: no cover - defensive programming
-        logger.error("Unexpected error while storing conversation event: %s", exc, exc_info=True)
+        logger.error(
+            f"❌ 500 Internal Error | conversation_id={conversation_id} | "
+            f"error={str(exc)}",
+            exc_info=True
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={

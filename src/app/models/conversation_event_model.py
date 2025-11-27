@@ -59,6 +59,7 @@ class ConversationEvent(Base):
     error_details = Column(Text, nullable=True)
     friendship_score_change = Column(Float, nullable=True)
     new_friendship_level = Column(String(50), nullable=True)
+    score_calculation_details = Column(JSONB, nullable=True, default=None)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
 

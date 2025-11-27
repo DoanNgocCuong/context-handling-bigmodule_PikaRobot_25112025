@@ -68,6 +68,11 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/context_handling_db
       REDIS_URL: redis://redis:6379/0
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+      RABBITMQ_QUEUE_NAME: conversation_events_processing
       CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
       CELERY_RESULT_BACKEND: redis://redis:6379/1
       API_HOST: 0.0.0.0
@@ -146,6 +151,36 @@ services:
     networks:
       - context_handling_network
     command: celery -A app.tasks.celery_app beat --loglevel=info
+
+  # RabbitMQ Worker (Consumer for conversation events)
+  rabbitmq_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: context_handling_rabbitmq_worker
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/context_handling_db
+      REDIS_URL: redis://redis:6379/0
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+      RABBITMQ_QUEUE_NAME: conversation_events_processing
+      ENVIRONMENT: development
+      LOG_LEVEL: INFO
+    volumes:
+      - .:/app
+      - ./logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - context_handling_network
+    command: python src/worker.py
+    restart: unless-stopped
 
 volumes:
   postgres_data:

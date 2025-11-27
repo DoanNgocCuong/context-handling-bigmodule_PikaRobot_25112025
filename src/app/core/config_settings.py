@@ -59,6 +59,13 @@ class Settings(BaseSettings):
 
     # RabbitMQ
     RABBITMQ_URL: Optional[str] = "amqp://guest:guest@localhost:5672/"
+    RABBITMQ_HOST: Optional[str] = None
+    RABBITMQ_PORT: Optional[int] = None
+    RABBITMQ_USERNAME: Optional[str] = None
+    RABBITMQ_PASSWORD: Optional[str] = None
+    RABBITMQ_QUEUE_NAME: str = "conversation_events_processing"
+    RABBITMQ_EXCHANGE_NAME: str = "conversation_exchange"
+    RABBITMQ_ROUTING_KEY: str = "conversation.end"
 
     # Application
     API_HOST: str = "0.0.0.0"

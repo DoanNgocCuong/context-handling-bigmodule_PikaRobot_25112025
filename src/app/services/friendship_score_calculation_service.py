@@ -153,8 +153,8 @@ class FriendshipScoreCalculationService:
         try:
             # Extract metrics
             # 1 turn = 1 cặp trao đổi (pika + user)
-            # Nếu số messages lẻ, làm tròn xuống (bỏ qua message cuối)
-            total_turns = len(conversation_log) // 2
+            # Đếm số cặp thực sự trong conversation_log
+            total_turns = self._count_complete_turns(conversation_log)
             user_initiated_questions = self._count_user_initiated_questions(
                 conversation_log, metadata
             )
@@ -167,6 +167,22 @@ class FriendshipScoreCalculationService:
             emotion_bonus = self._calculate_emotion_bonus(session_emotion)
             memory_bonus = self._calculate_memory_bonus(new_memories_count)
             
+            # Log calculation breakdown
+            logger.info(
+                f"📊 Score Calculation Breakdown | "
+                f"total_turns={total_turns} | "
+                f"user_questions={user_initiated_questions} | "
+                f"emotion={session_emotion} | "
+                f"memories={new_memories_count}"
+            )
+            logger.info(
+                f"💰 Score Components | "
+                f"base_score={base_score:.1f} | "
+                f"engagement_bonus={engagement_bonus:.1f} | "
+                f"emotion_bonus={emotion_bonus:.1f} | "
+                f"memory_bonus={memory_bonus:.1f}"
+            )
+            
             # Combine all components
             friendship_score_change = (
                 base_score + 
@@ -176,7 +192,16 @@ class FriendshipScoreCalculationService:
             )
             
             # Ensure non-negative result
-            return max(0.0, friendship_score_change)
+            final_score = max(0.0, friendship_score_change)
+            
+            if final_score == 0.0:
+                logger.warning(
+                    f"⚠️  Final score = 0.0 | "
+                    f"Check: total_turns={total_turns}, user_questions={user_initiated_questions}, "
+                    f"emotion={session_emotion}, memories={new_memories_count}"
+                )
+            
+            return final_score
             
         except Exception as e:
             logger.error(f"Error in score calculation: {str(e)}")
@@ -197,6 +222,58 @@ class FriendshipScoreCalculationService:
     def _calculate_memory_bonus(self, new_memories_count: int) -> float:
         """Calculate memory bonus from new memories count."""
         return float(new_memories_count) * self.MEMORY_BONUS_PER_MEMORY
+    
+    def _count_complete_turns(self, conversation_log: List[Dict[str, Any]]) -> int:
+        """
+        Đếm số turn hoàn chỉnh (1 turn = 1 cặp pika + user).
+        
+        Logic:
+        - Duyệt conversation_log theo thứ tự
+        - Đếm số cặp liên tiếp (pika, user) hoặc (user, pika)
+        - Bỏ qua các messages đơn lẻ không tạo thành cặp
+        
+        Args:
+            conversation_log: List of conversation messages
+            
+        Returns:
+            Số turn hoàn chỉnh (cặp trao đổi)
+        """
+        if not conversation_log:
+            logger.warning("⚠️  Empty conversation_log, total_turns = 0")
+            return 0
+        
+        # Debug: Đếm số messages theo speaker
+        pika_count = sum(1 for msg in conversation_log if msg.get("speaker", "").lower() == "pika")
+        user_count = sum(1 for msg in conversation_log if msg.get("speaker", "").lower() == "user")
+        
+        logger.debug(
+            f"📊 Counting turns | total_messages={len(conversation_log)} | "
+            f"pika={pika_count} | user={user_count}"
+        )
+        
+        turns = 0
+        i = 0
+        while i < len(conversation_log) - 1:
+            current_speaker = conversation_log[i].get("speaker", "").lower()
+            next_speaker = conversation_log[i + 1].get("speaker", "").lower()
+            
+            # Kiểm tra nếu là cặp (pika, user) hoặc (user, pika)
+            if (current_speaker == "pika" and next_speaker == "user") or \
+               (current_speaker == "user" and next_speaker == "pika"):
+                turns += 1
+                i += 2  # Bỏ qua cả 2 messages trong cặp
+            else:
+                i += 1  # Chỉ bỏ qua message hiện tại
+        
+        if turns == 0 and len(conversation_log) > 0:
+            logger.warning(
+                f"⚠️  No complete turns found! | total_messages={len(conversation_log)} | "
+                f"pika={pika_count} | user={user_count} | "
+                f"Reason: Conversation log chỉ có messages từ 1 speaker (không có cặp trao đổi)"
+            )
+        
+        logger.debug(f"✅ Total complete turns: {turns}")
+        return turns
     
     def _count_user_initiated_questions(
         self, 
@@ -233,7 +310,7 @@ class FriendshipScoreCalculationService:
             Dictionary with calculation components
         """
         # 1 turn = 1 cặp trao đổi (pika + user)
-        total_turns = len(conversation_log) // 2
+        total_turns = self._count_complete_turns(conversation_log)
         user_initiated_questions = self._count_user_initiated_questions(conversation_log, metadata)
         session_emotion = metadata.get("emotion", metadata.get("session_emotion", "neutral"))
         new_memories_count = metadata.get("new_memories_count", metadata.get("new_memories_created", 0))

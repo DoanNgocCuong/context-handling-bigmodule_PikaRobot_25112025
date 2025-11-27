@@ -78,11 +78,28 @@ class ConversationEventRepository:
         event: ConversationEvent,
         friendship_score_change: float,
         friendship_level: str,
+        score_calculation_details: Optional[Dict[str, Any]] = None,
     ) -> ConversationEvent:
-        """Set status to PROCESSED with processing metadata."""
+        """
+        Set status to PROCESSED with processing metadata.
+        
+        Args:
+            event: ConversationEvent to update
+            friendship_score_change: Final score change
+            friendship_level: New friendship level
+            score_calculation_details: Optional detailed breakdown of score calculation
+        """
         event.status = ConversationEventStatus.PROCESSED.value
         event.friendship_score_change = friendship_score_change
         event.new_friendship_level = friendship_level
+        
+        # CRITICAL: SQLAlchemy không detect in-place changes trong JSONB
+        # Phải gán lại object và flag_modified để force SQLAlchemy detect changes
+        event.score_calculation_details = score_calculation_details
+        if score_calculation_details is not None:
+            from sqlalchemy.orm.attributes import flag_modified
+            flag_modified(event, "score_calculation_details")
+        
         event.processed_at = datetime.now(timezone.utc)
         event.error_code = None
         event.error_details = None

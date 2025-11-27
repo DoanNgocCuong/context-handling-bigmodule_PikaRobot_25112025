@@ -64,11 +64,22 @@ class ConversationEventService:
         # Transform conversation_logs if in API format
         raw_logs = payload.get("conversation_log") or []
         
+        # Debug: Log raw logs trước khi transform
+        if raw_logs:
+            bot_count = sum(1 for item in raw_logs if "BOT" in str(item.get("character", "")).upper())
+            user_count = sum(1 for item in raw_logs if "USER" in str(item.get("character", "")).upper())
+            logger.info(
+                f"📥 Raw conversation_logs received | "
+                f"conversation_id={request.conversation_id} | "
+                f"total={len(raw_logs)} | "
+                f"BOT={bot_count} | USER={user_count}"
+            )
+        
         # Store raw data before transformation
         if raw_logs and is_api_format(raw_logs):
             logger.info(
-                f"Detected API format conversation_logs, transforming to standardized format "
-                f"for conversation_id={request.conversation_id}"
+                f"🔄 Detected API format, transforming to standardized format | "
+                f"conversation_id={request.conversation_id}"
             )
             # Save raw format to raw_conversation_log
             payload["raw_conversation_log"] = raw_logs
@@ -100,30 +111,8 @@ class ConversationEventService:
 
         logger.info("Conversation event stored for conversation_id=%s", event.conversation_id)
 
-        # Immediately trigger processing for this single event (primary path).
-        try:
-            conversation_fetch_service = ConversationDataFetchService(
-                conversation_repository=None,
-                external_api_client=None,
-            )
-            score_service = FriendshipScoreCalculationService(
-                conversation_fetch_service=conversation_fetch_service
-            )
-            status_service = FriendshipStatusUpdateService(self.db)
-            processor = ConversationEventProcessingService(
-                db=self.db,
-                score_service=score_service,
-                status_update_service=status_service,
-            )
-            processor.process_single_event(event.id)
-        except Exception as exc:  # pragma: no cover - defensive
-            # Do not fail API; fallback scheduler will retry pending events.
-            logger.error(
-                "Immediate processing for conversation_id=%s failed: %s",
-                event.conversation_id,
-                exc,
-                exc_info=True,
-            )
+        # NOTE: Immediate processing removed - events will be processed by RabbitMQ worker
+        # Background scheduler will still retry failed events as fallback
 
         return self._serialize(event)
 
@@ -151,6 +140,7 @@ class ConversationEventService:
             "error_details": event.error_details,
             "friendship_score_change": event.friendship_score_change,
             "new_friendship_level": event.new_friendship_level,
+            "score_calculation_details": event.score_calculation_details,
             "updated_at": event.updated_at,
         }
 

@@ -92,6 +92,10 @@ class ConversationEventData(BaseModel):
     error_details: Optional[str]
     friendship_score_change: Optional[float]
     new_friendship_level: Optional[str]
+    score_calculation_details: Optional[Dict[str, Any]] = Field(
+        None,
+        description="Detailed breakdown of friendship score calculation"
+    )
     updated_at: datetime
 
 

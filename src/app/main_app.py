@@ -1,8 +1,10 @@
 """
 FastAPI application entry point.
 """
-from fastapi import FastAPI
+import time
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core.config_settings import settings
 from app.api.v1.router_v1_main import router as v1_router
@@ -31,6 +33,44 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Request logging middleware
+class RequestLoggingMiddleware(BaseHTTPMiddleware):
+    """Middleware để log tất cả incoming requests."""
+    
+    async def dispatch(self, request: Request, call_next):
+        # Log ngay khi nhận request
+        start_time = time.time()
+        method = request.method
+        path = request.url.path
+        client_ip = request.client.host if request.client else "unknown"
+        
+        # Log request details
+        logger.info(
+            f"🌐 {method} {path} | "
+            f"client_ip={client_ip} | "
+            f"query_params={dict(request.query_params)}"
+        )
+        
+        # Process request
+        response = await call_next(request)
+        
+        # Calculate processing time
+        process_time = time.time() - start_time
+        
+        # Log response
+        logger.info(
+            f"✅ {method} {path} | "
+            f"status={response.status_code} | "
+            f"time={process_time:.3f}s"
+        )
+        
+        return response
+
+
+# Add request logging middleware (after CORS, before routers)
+app.add_middleware(RequestLoggingMiddleware)
 
 # Include routers
 app.include_router(v1_router)
