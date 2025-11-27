@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import AliasChoices, BaseModel, Field, model_validator
 
-from app.core.constants_enums import AgentType, ConversationEventStatus
+from app.core.constants_enums import ConversationEventStatus
 
 
 class ConversationEventCreateRequest(BaseModel):
@@ -16,7 +16,7 @@ class ConversationEventCreateRequest(BaseModel):
 
     conversation_id: str = Field(..., min_length=3, max_length=255, description="Unique conversation identifier")
     user_id: str = Field(..., min_length=3, max_length=255, description="User identifier")
-    bot_type: AgentType = Field(..., description="Bot type that handled the session")
+    bot_type: str = Field(..., max_length=50, description="Bot type that handled the session (accepts any string value)")
     bot_id: str = Field(..., max_length=255, description="Bot identifier")
     bot_name: str = Field(..., max_length=255, description="Human readable bot name")
     start_time: datetime = Field(..., description="Conversation start timestamp")
@@ -71,7 +71,7 @@ class ConversationEventData(BaseModel):
     id: int
     conversation_id: str
     user_id: str
-    bot_type: AgentType
+    bot_type: str
     bot_id: str
     bot_name: str
     start_time: datetime
