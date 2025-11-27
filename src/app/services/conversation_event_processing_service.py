@@ -14,6 +14,7 @@ from app.repositories.conversation_event_repository import ConversationEventRepo
 from app.services.friendship_score_calculation_service import FriendshipScoreCalculationService
 from app.services.friendship_status_update_service import FriendshipStatusUpdateService
 from app.utils.logger_setup import get_logger
+from app.utils.topic_utils import get_topic_id_from_agent_id
 
 logger = get_logger(__name__)
 
@@ -56,10 +57,69 @@ class ConversationEventProcessingService:
             calc_result = self.score_service.calculate_score_from_conversation_id(
                 event.conversation_id
             )
-            status = self.status_update_service.apply_score_change(
-                user_id=event.user_id,
-                score_change=calc_result["friendship_score_change"],
+            score_change = calc_result["friendship_score_change"]
+            
+            # Try to update topic_metrics first (it also updates friendship_score)
+            bot_id = event.bot_id
+            
+            # Get user's friendship_level first to query topic_id from DB
+            user_status = self.status_update_service.get_status(event.user_id)
+            friendship_level = user_status.get("friendship_level", "PHASE1_STRANGER")
+            
+            # Get topic_id from DB (agenda_agent_prompting table)
+            topic_id = get_topic_id_from_agent_id(
+                bot_id=bot_id,
+                friendship_level=friendship_level,
+                db=self.db
             )
+            logger.info(
+                f"🔍 Got topic_id from agent_id: bot_id='{bot_id}', "
+                f"friendship_level='{friendship_level}' -> topic_id='{topic_id}'"
+            )
+            status = None
+            
+            if topic_id:
+                # Calculate turns from conversation log
+                conversation_data = self.score_service.conversation_fetch_service.fetch_by_id(
+                    event.conversation_id
+                )
+                conversation_log = conversation_data.get("conversation_log", []) if conversation_data else []
+                turns_change = len(conversation_log) // 2  # 1 turn = 1 pair of exchanges
+                
+                try:
+                    self.status_update_service.update_topic_metrics(
+                        user_id=event.user_id,
+                        topic_id=topic_id,
+                        score_change=score_change,
+                        bot_id=bot_id,
+                        turns_change=turns_change
+                    )
+                    # Get updated status to get friendship_level
+                    status = self.status_update_service.get_status(event.user_id)
+                    logger.info(
+                        f"Updated topic_metrics for user_id={event.user_id}, "
+                        f"topic_id={topic_id}, score_change={score_change}, turns={turns_change}"
+                    )
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to update topic_metrics for user_id={event.user_id}, "
+                        f"topic_id={topic_id}: {e}, falling back to apply_score_change"
+                    )
+                    # Fallback to apply_score_change if update_topic_metrics fails
+                    status = self.status_update_service.apply_score_change(
+                        user_id=event.user_id,
+                        score_change=score_change,
+                    )
+            else:
+                # No topic_id, just update friendship score
+                logger.warning(
+                    f"Could not extract topic_id from bot_id={bot_id} for user_id={event.user_id}, "
+                    f"using apply_score_change only"
+                )
+                status = self.status_update_service.apply_score_change(
+                    user_id=event.user_id,
+                    score_change=score_change,
+                )
 
             self.repository.mark_processed(
                 event=event,
@@ -105,10 +165,69 @@ class ConversationEventProcessingService:
                 calc_result = self.score_service.calculate_score_from_conversation_id(
                     event.conversation_id
                 )
-                status = self.status_update_service.apply_score_change(
-                    user_id=event.user_id,
-                    score_change=calc_result["friendship_score_change"],
+                score_change = calc_result["friendship_score_change"]
+                
+                # Try to update topic_metrics first (it also updates friendship_score)
+                bot_id = event.bot_id
+                
+                # Get user's friendship_level first to query topic_id from DB
+                user_status = self.status_update_service.get_status(event.user_id)
+                friendship_level = user_status.get("friendship_level", "PHASE1_STRANGER")
+                
+                # Get topic_id from DB (agenda_agent_prompting table)
+                topic_id = get_topic_id_from_agent_id(
+                    bot_id=bot_id,
+                    friendship_level=friendship_level,
+                    db=self.db
                 )
+                logger.info(
+                    f"🔍 Got topic_id from agent_id: bot_id='{bot_id}', "
+                    f"friendship_level='{friendship_level}' -> topic_id='{topic_id}'"
+                )
+                status = None
+                
+                if topic_id:
+                    # Calculate turns from conversation log
+                    conversation_data = self.score_service.conversation_fetch_service.fetch_by_id(
+                        event.conversation_id
+                    )
+                    conversation_log = conversation_data.get("conversation_log", []) if conversation_data else []
+                    turns_change = len(conversation_log) // 2  # 1 turn = 1 pair of exchanges
+                    
+                    try:
+                        self.status_update_service.update_topic_metrics(
+                            user_id=event.user_id,
+                            topic_id=topic_id,
+                            score_change=score_change,
+                            bot_id=bot_id,
+                            turns_change=turns_change
+                        )
+                        # Get updated status to get friendship_level
+                        status = self.status_update_service.get_status(event.user_id)
+                        logger.info(
+                            f"Updated topic_metrics for user_id={event.user_id}, "
+                            f"topic_id={topic_id}, score_change={score_change}, turns={turns_change}"
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to update topic_metrics for user_id={event.user_id}, "
+                            f"topic_id={topic_id}: {e}, falling back to apply_score_change"
+                        )
+                        # Fallback to apply_score_change if update_topic_metrics fails
+                        status = self.status_update_service.apply_score_change(
+                            user_id=event.user_id,
+                            score_change=score_change,
+                        )
+                else:
+                    # No topic_id, just update friendship score
+                    logger.warning(
+                        f"Could not extract topic_id from bot_id={bot_id} for user_id={event.user_id}, "
+                        f"using apply_score_change only"
+                    )
+                    status = self.status_update_service.apply_score_change(
+                        user_id=event.user_id,
+                        score_change=score_change,
+                    )
 
                 self.repository.mark_processed(
                     event=event,

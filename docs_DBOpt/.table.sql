@@ -8,7 +8,9 @@ CREATE TABLE friendship_status (
     -- PHASE1_STRANGER (0-99), PHASE2_ACQUAINTANCE (100-499), PHASE3_FRIEND (500+)
     last_interaction_date TIMESTAMP WITH TIME ZONE,
     streak_day INTEGER DEFAULT 0 NOT NULL,
-    topic_metrics JSONB DEFAULT '{}' NOT NULL,
+    topic_metrics JSONB DEFAULT '{}'::jsonb NOT NULL,
+    last_emotion VARCHAR(50),
+    last_followup_topic VARCHAR(255),
     -- {
     --   "agent_movie": { "score": 52.0, "turns": 65, "last_date": "..." },
     --   "agent_animal": { "score": 28.5, "turns": 32, "last_date": "..." }
@@ -34,9 +36,6 @@ CREATE TABLE friendship_agent_mapping (
     agent_type VARCHAR(50) NOT NULL,
     -- GREETING, TALK, GAME
 
-    topic VARCHAR(100),
-    -- Chủ đề gắn với agent: ví dụ 'pets', 'school', 'movie'
-
     agent_id VARCHAR(255) NOT NULL,
     agent_name VARCHAR(255) NOT NULL,
     agent_description TEXT,
@@ -57,9 +56,34 @@ ON friendship_agent_mapping(friendship_level, agent_type);
 CREATE INDEX idx_mapping_active
 ON friendship_agent_mapping(is_active);
 
-CREATE INDEX idx_mapping_topic
-ON friendship_agent_mapping(topic);
+-- Persona + context template per friendship phase
+CREATE TABLE prompt_template_for_level_friend (
+    id SERIAL PRIMARY KEY,
+    friendship_level VARCHAR(50) NOT NULL UNIQUE,
+    context_style_guideline TEXT NOT NULL,
+    user_profile TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
 
+CREATE INDEX idx_prompt_template_level
+ON prompt_template_for_level_friend(friendship_level);
+
+-- Topic + level + agent type talking agendas
+CREATE TABLE agenda_agent_prompting (
+    id SERIAL PRIMARY KEY,
+    topic_id VARCHAR(255) NOT NULL,
+    agent_id VARCHAR(255) NOT NULL,
+    talking_agenda TEXT NOT NULL,
+    friendship_level VARCHAR(50) NOT NULL,
+    agent_type VARCHAR(50) NOT NULL,
+    UNIQUE (topic_id, friendship_level, agent_type)
+);
+
+CREATE INDEX idx_agenda_topic ON agenda_agent_prompting(topic_id);
+CREATE INDEX idx_agenda_agent_id ON agenda_agent_prompting(agent_id);
+CREATE INDEX idx_agenda_level ON agenda_agent_prompting(friendship_level);
+CREATE INDEX idx_agenda_agent_type ON agenda_agent_prompting(agent_type);
 
 
 --- agent_prompting table
@@ -113,7 +137,7 @@ CREATE TABLE conversation_events (
     
     -- Conversation Data
     conversation_log JSONB NOT NULL DEFAULT '[]',
-    raw_conversation_log JSONB NULL DEFAULT '[]',
+    raw_conversation_log JSONB DEFAULT NULL,
     
     -- Status tracking
     status VARCHAR(50) NOT NULL DEFAULT 'PENDING'

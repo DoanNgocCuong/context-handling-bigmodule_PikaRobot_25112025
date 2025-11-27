@@ -31,6 +31,36 @@ class FriendshipStatusUpdateService:
             raise FriendshipNotFoundError(f"Friendship status not found for user {user_id}")
         return self._serialize(status)
 
+    def update_topic_metrics(
+        self,
+        user_id: str,
+        topic_id: str,
+        score_change: float,
+        bot_id: str,
+        turns_change: int = 1
+    ) -> Dict[str, Any]:
+        """
+        Cập nhật topic_metrics trong bảng friendship_status.
+        
+        Args:
+            user_id: User ID
+            topic_id: Topic identifier (e.g., "movie", "dreams")
+            score_change: Score change to add to topic
+            bot_id: Bot identifier used in this conversation
+            turns_change: Number of turns to add (default: 1)
+            
+        Returns:
+            Dictionary containing updated topic_metrics entry
+        """
+        updated_topic = self.repository.update_topic_metrics(
+            user_id=user_id,
+            topic_id=topic_id,
+            score_change=score_change,
+            bot_id=bot_id,
+            turns_change=turns_change
+        )
+        return updated_topic
+    
     @staticmethod
     def _serialize(status) -> Dict[str, Any]:
         """Serialize SQLAlchemy model to dict."""

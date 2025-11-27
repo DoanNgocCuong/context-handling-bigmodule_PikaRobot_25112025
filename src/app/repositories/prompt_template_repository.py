@@ -64,4 +64,33 @@ class PromptTemplateRepository:
             )
             .first()
         )
+    
+    def get_topic_id_by_agent_id(
+        self,
+        *,
+        agent_id: str,
+        friendship_level: str,
+    ) -> Optional[str]:
+        """
+        Lấy topic_id từ agent_id và friendship_level.
+        
+        Query từ bảng agenda_agent_prompting để tìm topic_id tương ứng với agent_id.
+        Nếu có nhiều kết quả, lấy kết quả đầu tiên.
+        
+        Args:
+            agent_id: Agent identifier (e.g., "agent_story_telling")
+            friendship_level: Friendship level của user (e.g., "PHASE1_STRANGER")
+            
+        Returns:
+            topic_id nếu tìm thấy, None nếu không tìm thấy
+        """
+        guide = (
+            self.db.query(PromptTemplateForLevelFriendship)
+            .filter(
+                PromptTemplateForLevelFriendship.agent_id == agent_id,
+                PromptTemplateForLevelFriendship.friendship_level == friendship_level,
+            )
+            .first()
+        )
+        return guide.topic_id if guide else None
 
