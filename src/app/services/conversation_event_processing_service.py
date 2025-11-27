@@ -63,8 +63,18 @@ class ConversationEventProcessingService:
             bot_id = event.bot_id
             
             # Get user's friendship_level first to query topic_id from DB
-            user_status = self.status_update_service.get_status(event.user_id)
-            friendship_level = user_status.get("friendship_level", "PHASE1_STRANGER")
+            # get_status() will auto-create record if user doesn't exist
+            # If it fails, we'll use default level and apply_score_change will create it
+            try:
+                user_status = self.status_update_service.get_status(event.user_id)
+                friendship_level = user_status.get("friendship_level", "PHASE1_STRANGER")
+            except Exception as e:
+                logger.warning(
+                    f"⚠️  Failed to get/create friendship status for user {event.user_id}: {e}. "
+                    f"Using default level, will create record in apply_score_change"
+                )
+                # Use default level - apply_score_change will create the record
+                friendship_level = "PHASE1_STRANGER"
             
             # Get topic_id from DB (agenda_agent_prompting table)
             topic_id = get_topic_id_from_agent_id(
@@ -116,9 +126,19 @@ class ConversationEventProcessingService:
                 logger.warning(
                     f"Could not extract topic_id from bot_id={bot_id} for user_id={event.user_id}, "
                     f"using apply_score_change only"
-            )
-            status = self.status_update_service.apply_score_change(
-                user_id=event.user_id,
+                )
+                status = self.status_update_service.apply_score_change(
+                    user_id=event.user_id,
+                    score_change=score_change,
+                )
+            
+            # Ensure status is set (fallback if somehow status is still None)
+            if status is None:
+                logger.warning(
+                    f"Status is None after processing, applying score change as fallback"
+                )
+                status = self.status_update_service.apply_score_change(
+                    user_id=event.user_id,
                     score_change=score_change,
                 )
 

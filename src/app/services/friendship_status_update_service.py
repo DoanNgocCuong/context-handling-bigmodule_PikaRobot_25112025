@@ -25,11 +25,46 @@ class FriendshipStatusUpdateService:
         return self._serialize(status)
 
     def get_status(self, user_id: str) -> Dict[str, Any]:
-        """Get friendship status for user."""
-        status = self.repository.get_by_user_id(user_id)
-        if not status:
-            raise FriendshipNotFoundError(f"Friendship status not found for user {user_id}")
-        return self._serialize(status)
+        """
+        Get friendship status for user.
+        
+        If user doesn't exist, creates a default record automatically.
+        
+        Args:
+            user_id: User ID to get status for
+            
+        Returns:
+            Dictionary with friendship status
+            
+        Raises:
+            Exception: If creation fails (e.g., DB error)
+        """
+        try:
+            status = self.repository.get_by_user_id(user_id)
+            if not status:
+                # Auto-create default record for new user
+                from app.utils.logger_setup import get_logger
+                logger = get_logger(__name__)
+                logger.info(f"🆕 Creating default friendship status for new user: {user_id}")
+                try:
+                    status = self.repository.create_default(user_id)
+                    logger.info(f"✅ Successfully created friendship status for user: {user_id}")
+                except Exception as e:
+                    logger.error(
+                        f"❌ Failed to create default friendship status for user {user_id}: {e}",
+                        exc_info=True
+                    )
+                    # Re-raise to let caller handle
+                    raise
+            return self._serialize(status)
+        except Exception as e:
+            from app.utils.logger_setup import get_logger
+            logger = get_logger(__name__)
+            logger.error(
+                f"❌ Error in get_status for user {user_id}: {e}",
+                exc_info=True
+            )
+            raise
 
     def update_topic_metrics(
         self,

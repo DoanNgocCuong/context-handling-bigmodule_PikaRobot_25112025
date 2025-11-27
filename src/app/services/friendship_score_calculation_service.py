@@ -8,6 +8,7 @@ from typing import Dict, List, Any, Optional
 from app.utils.logger_setup import get_logger
 from app.utils.color_log import success, error, warning, info, key_value
 from app.core.exceptions_custom import InvalidScoreError, ConversationNotFoundError
+from app.services.utils.llm_analysis_utils import analyze_conversation_with_llm
 
 logger = get_logger(__name__)
 
@@ -91,6 +92,10 @@ class FriendshipScoreCalculationService:
             # Step 2: Extract conversation log and metadata
             conversation_log = conversation_data.get("conversation_log", [])
             metadata = conversation_data.get("metadata", {})
+            # Add conversation_id and user_id to metadata for LLM/Memory API tracking
+            metadata["conversation_id"] = conversation_id
+            if "user_id" not in metadata:
+                metadata["user_id"] = conversation_data.get("user_id")
             
             # Step 3: Calculate score change
             score_change = self.calculate_friendship_score_change(
@@ -156,10 +161,43 @@ class FriendshipScoreCalculationService:
             # 1 turn = 1 cặp trao đổi (pika + user)
             # Đếm số cặp thực sự trong conversation_log
             total_turns = self._count_complete_turns(conversation_log)
+            
+            # Use LLM analysis if metadata is incomplete
+            has_complete_metadata = self._has_complete_metadata(metadata)
+            logger.debug(
+                f"🔍 Metadata check | "
+                f"has_user_questions={'user_initiated_questions' in metadata} | "
+                f"has_emotion={'emotion' in metadata or 'session_emotion' in metadata} | "
+                f"complete={has_complete_metadata}"
+            )
+            
+            if not has_complete_metadata:
+                logger.info("📊 Metadata incomplete, using parallel analysis (2 LLMs + 1 Memory API)")
+                # Get conversation_id and user_id from metadata if available (for tracking)
+                conversation_id = metadata.get("conversation_id")
+                user_id = metadata.get("user_id")
+                llm_analysis = analyze_conversation_with_llm(
+                    conversation_log=conversation_log,
+                    conversation_id=conversation_id,
+                    user_id=user_id
+                )
+                # Mark as LLM analyzed to avoid re-running
+                llm_analysis["_llm_analyzed"] = True
+                # Merge LLM results into metadata (LLM takes precedence)
+                metadata = {**metadata, **llm_analysis}
+                logger.info(
+                    f"✅ LLM analysis completed | "
+                    f"user_initiated_questions={llm_analysis.get('user_initiated_questions')} | "
+                    f"session_emotion={llm_analysis.get('session_emotion')}"
+                )
+            else:
+                logger.debug("✅ Metadata complete, skipping LLM analysis")
+            
             user_initiated_questions = self._count_user_initiated_questions(
                 conversation_log, metadata
             )
-            session_emotion = metadata.get("emotion", metadata.get("session_emotion", "neutral"))
+            # Priority: session_emotion from LLM > emotion from metadata > default
+            session_emotion = metadata.get("session_emotion", metadata.get("emotion", "neutral"))
             new_memories_count = metadata.get("new_memories_count", metadata.get("new_memories_created", 0))
             
             # Calculate components
@@ -289,10 +327,10 @@ class FriendshipScoreCalculationService:
         Count user-initiated questions.
         
         Priority:
-        1. Use metadata.user_initiated_questions if available
+        1. Use metadata.user_initiated_questions if available (from LLM or provided)
         2. Count user messages in conversation_log as fallback
         """
-        # Try to get from metadata first (more accurate)
+        # Try to get from metadata first (more accurate, especially from LLM)
         if "user_initiated_questions" in metadata:
             return int(metadata["user_initiated_questions"])
         
@@ -302,6 +340,60 @@ class FriendshipScoreCalculationService:
             if msg.get("speaker", "").lower() == "user"
         )
         return user_messages
+    
+    def _has_complete_metadata(self, metadata: Dict[str, Any]) -> bool:
+        """
+        Check if metadata has all required fields for analysis.
+        
+        This method checks if metadata has REAL values from LLM analysis.
+        Default values like "neutral" emotion or 0 questions are considered incomplete
+        and will trigger LLM analysis.
+        
+        Logic:
+        - If metadata has flag "_llm_analyzed" = True, it means LLM already ran → complete
+        - If emotion is "neutral" (default), treat as incomplete → need LLM
+        - If user_initiated_questions is missing or 0, treat as incomplete → need LLM
+        
+        Args:
+            metadata: Conversation metadata
+            
+        Returns:
+            True if metadata has all required fields with real values, False otherwise
+        """
+        # Check if LLM already analyzed this conversation
+        is_llm_analyzed = metadata.get("_llm_analyzed", False)
+        if is_llm_analyzed:
+            logger.debug("✅ Metadata already analyzed by LLM, skipping LLM call")
+            return True
+        
+        # Check if we have user_initiated_questions
+        # If missing or 0, it might be a default value → need LLM
+        has_questions = "user_initiated_questions" in metadata
+        questions_value = metadata.get("user_initiated_questions")
+        
+        # Check if we have session_emotion (not default "neutral")
+        emotion_value = metadata.get("emotion") or metadata.get("session_emotion", "neutral")
+        emotion_lower = str(emotion_value).lower()
+        
+        # If emotion is "neutral", it's likely a default value → need LLM
+        # If questions is 0 or missing, it's likely a default value → need LLM
+        has_real_emotion = emotion_lower != "neutral"
+        has_real_questions = has_questions and questions_value is not None and questions_value > 0
+        
+        # Metadata is complete only if BOTH are real values (not defaults):
+        # 1. Emotion is NOT "neutral" (real value from LLM), AND
+        # 2. Questions > 0 (real value from LLM or explicitly provided)
+        # If either is default, we need LLM to analyze
+        is_complete = has_real_emotion and has_real_questions
+        
+        if not is_complete:
+            logger.debug(
+                f"⚠️  Metadata incomplete | "
+                f"emotion='{emotion_value}' (is_neutral={emotion_lower == 'neutral'}) | "
+                f"questions={questions_value} (has_real_value={has_real_questions})"
+            )
+        
+        return is_complete
     
     def _get_calculation_breakdown(
         self,
@@ -317,7 +409,8 @@ class FriendshipScoreCalculationService:
         # 1 turn = 1 cặp trao đổi (pika + user)
         total_turns = self._count_complete_turns(conversation_log)
         user_initiated_questions = self._count_user_initiated_questions(conversation_log, metadata)
-        session_emotion = metadata.get("emotion", metadata.get("session_emotion", "neutral"))
+        # Priority: session_emotion from LLM > emotion from metadata > default
+        session_emotion = metadata.get("session_emotion", metadata.get("emotion", "neutral"))
         new_memories_count = metadata.get("new_memories_count", metadata.get("new_memories_created", 0))
         
         base_score = self._calculate_base_score(total_turns)

@@ -95,6 +95,21 @@ class Settings(BaseSettings):
     
     # Conversation Event Scheduler
     CONVERSATION_EVENT_POLL_INTERVAL_HOURS: int = 6  # Chạy mỗi 6 giờ để xử lý conversation events
+    
+    # LLM Analysis Configuration
+    LLM_ANALYSIS_ENABLED: bool = False
+    GROQ_API_KEY: Optional[str] = None
+    GROQ_MODEL: str = "openai/gpt-oss-20b"
+    
+    # Langfuse Configuration (Observability)
+    LANGFUSE_ENABLED: bool = False
+    LANGFUSE_PUBLIC_KEY: Optional[str] = None
+    LANGFUSE_SECRET_KEY: Optional[str] = None
+    LANGFUSE_HOST: str = "https://cloud.langfuse.com"
+    
+    # Memory API Configuration (Mem0)
+    MEMORY_API_URL: Optional[str] = None
+    MEMORY_API_ENABLED: bool = True
 
     model_config = SettingsConfigDict(
         # Load .env file directly via Pydantic (as backup to python-dotenv)

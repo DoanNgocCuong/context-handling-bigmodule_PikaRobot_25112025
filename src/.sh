@@ -9,6 +9,12 @@ cp .env.example .env
 # 3. Run server
 uvicorn app.main_app:app --reload --host 0.0.0.0 --port 30020
 
+# Development (có auto-reload):
+python src/worker_dev.py
+
+# Production (không auto-reload):
+python src/worker.py
+
 # 4. Test health check
 curl http://localhost:8000/v1/health
 
