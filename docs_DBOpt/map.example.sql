@@ -15,8 +15,8 @@ VALUES
 -- Game agents cho PHASE1_STRANGER
 INSERT INTO friendship_agent_mapping (friendship_level, agent_type, agent_id, agent_name, agent_description, weight, is_active)
 VALUES 
-('PHASE1_STRANGER', 'GAME_ACTIVITY', 'game_drawing', 'Drawing Game', 'Trò chơi vẽ', 1.0, TRUE),
-('PHASE1_STRANGER', 'GAME_ACTIVITY', 'game_riddle', 'Riddle Game', 'Trò chơi đố', 0.9, TRUE);
+('PHASE1_STRANGER', 'GAME', 'game_drawing', 'Drawing Game', 'Trò chơi vẽ', 1.0, TRUE),
+('PHASE1_STRANGER', 'GAME', 'game_riddle', 'Riddle Game', 'Trò chơi đố', 0.9, TRUE);
 
 -- Greeting agents cho PHASE2_ACQUAINTANCE
 INSERT INTO friendship_agent_mapping (friendship_level, agent_type, agent_id, agent_name, agent_description, weight, is_active)
@@ -33,8 +33,8 @@ VALUES
 -- Game agents cho PHASE2_ACQUAINTANCE
 INSERT INTO friendship_agent_mapping (friendship_level, agent_type, agent_id, agent_name, agent_description, weight, is_active)
 VALUES 
-('PHASE2_ACQUAINTANCE', 'GAME_ACTIVITY', 'game_20questions', '20 Questions', 'Trò chơi 20 câu hỏi', 1.0, TRUE),
-('PHASE2_ACQUAINTANCE', 'GAME_ACTIVITY', 'game_story_building', 'Story Building', 'Xây dựng câu chuyện chung', 1.5, TRUE);
+('PHASE2_ACQUAINTANCE', 'GAME', 'game_20questions', '20 Questions', 'Trò chơi 20 câu hỏi', 1.0, TRUE),
+('PHASE2_ACQUAINTANCE', 'GAME', 'game_story_building', 'Story Building', 'Xây dựng câu chuyện chung', 1.5, TRUE);
 
 -- Greeting agents cho PHASE3_FRIEND
 INSERT INTO friendship_agent_mapping (friendship_level, agent_type, agent_id, agent_name, agent_description, weight, is_active)
@@ -51,5 +51,5 @@ VALUES
 -- Game agents cho PHASE3_FRIEND
 INSERT INTO friendship_agent_mapping (friendship_level, agent_type, agent_id, agent_name, agent_description, weight, is_active)
 VALUES 
-('PHASE3_FRIEND', 'GAME_ACTIVITY', 'game_adventure', 'Adventure Quest', 'Cuộc phiêu lưu chung', 1.5, TRUE),
-('PHASE3_FRIEND', 'GAME_ACTIVITY', 'game_collaborative_art', 'Collaborative Art', 'Tạo tác phẩm nghệ thuật chung', 2.0, TRUE);
+('PHASE3_FRIEND', 'GAME', 'game_adventure', 'Adventure Quest', 'Cuộc phiêu lưu chung', 1.5, TRUE),
+('PHASE3_FRIEND', 'GAME', 'game_collaborative_art', 'Collaborative Art', 'Tạo tác phẩm nghệ thuật chung', 2.0, TRUE);

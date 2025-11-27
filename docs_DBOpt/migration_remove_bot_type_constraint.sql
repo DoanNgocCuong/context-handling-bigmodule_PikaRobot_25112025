@@ -1,6 +1,6 @@
 -- Migration: Remove bot_type CHECK constraint from conversation_events table
 -- Date: 2025-11-27
--- Description: Remove CHECK constraint to allow any bot_type value (not limited to GREETING, TALK, GAME_ACTIVITY)
+-- Description: Remove CHECK constraint to allow any bot_type value (not limited to GREETING, TALK, GAME)
 
 -- Drop the existing CHECK constraint
 ALTER TABLE conversation_events 

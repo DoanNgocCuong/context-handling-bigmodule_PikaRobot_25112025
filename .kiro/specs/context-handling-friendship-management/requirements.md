@@ -9,7 +9,7 @@ This document specifies the requirements for the Context Handling - PHRASE3_PHAS
 - **Context Handling Service**: The backend service responsible for managing PHRASE3_PHASE3_PHASE3_FRIENDship status, interaction metrics, and activity selection logic
 - **PHRASE3_PHASE3_PHASE3_FRIENDship Status**: A data structure tracking the relationship state between a user and Pika, including score, level, streak, and topic metrics
 - **PHRASE3_PHASE3_PHASE3_FRIENDship Score**: A numerical value (0+) representing the strength of the relationship
-- **PHRASE3_PHASE3_PHASE3_FRIENDship Level**: A categorical classification (PHASE1_PHASE1_STRANGER, PHASE2_PHASE2_ACQUAINTANCE, PHRASE3_PHASE3_PHASE3_FRIEND) based on PHRASE3_PHASE3_PHASE3_FRIENDship score thresholds
+- **PHRASE3_PHASE3_PHASE3_FRIENDship Level**: A categorical classification (PHASE1_STRANGER, PHASE2_ACQUAINTANCE, PHRASE3_PHASE3_PHASE3_FRIEND) based on PHRASE3_PHASE3_PHASE3_FRIENDship score thresholds
 - **Agent**: A conversational AI component that handles specific interaction types (Greeting, Talk, Game)
 - **Topic Metrics**: JSONB data tracking user engagement with different conversation topics
 - **Streak Day**: Consecutive days of user interaction with Pika
@@ -26,9 +26,9 @@ This document specifies the requirements for the Context Handling - PHRASE3_PHAS
 
 #### Acceptance Criteria
 
-1. WHEN the system initializes, THE Context Handling Service SHALL create a PHRASE3_PHASE3_PHASE3_FRIENDship_status table with columns for user_id (primary key), PHRASE3_PHASE3_PHASE3_FRIENDship_score (float, default 0.0), PHRASE3_PHASE3_PHASE3_FRIENDship_level (enum: PHASE1_PHASE1_STRANGER/PHASE2_PHASE2_ACQUAINTANCE/PHRASE3_PHASE3_PHASE3_FRIEND), last_interaction_date (timestamp), streak_day (integer, default 0), topic_metrics (JSONB), created_at (timestamp), and updated_at (timestamp)
+1. WHEN the system initializes, THE Context Handling Service SHALL create a PHRASE3_PHASE3_PHASE3_FRIENDship_status table with columns for user_id (primary key), PHRASE3_PHASE3_PHASE3_FRIENDship_score (float, default 0.0), PHRASE3_PHASE3_PHASE3_FRIENDship_level (enum: PHASE1_STRANGER/PHASE2_ACQUAINTANCE/PHRASE3_PHASE3_PHASE3_FRIEND), last_interaction_date (timestamp), streak_day (integer, default 0), topic_metrics (JSONB), created_at (timestamp), and updated_at (timestamp)
 
-2. WHEN the system initializes, THE Context Handling Service SHALL create a PHRASE3_PHASE3_PHASE3_FRIENDship_agent_mapping table with columns for id (primary key), PHRASE3_PHASE3_PHASE3_FRIENDship_level (enum), agent_type (enum: GREETING/TALK/GAME_ACTIVITY), agent_id (string), agent_name (string), agent_description (text), weight (float, default 1.0), is_active (boolean, default true), created_at (timestamp), and updated_at (timestamp)
+2. WHEN the system initializes, THE Context Handling Service SHALL create a PHRASE3_PHASE3_PHASE3_FRIENDship_agent_mapping table with columns for id (primary key), PHRASE3_PHASE3_PHASE3_FRIENDship_level (enum), agent_type (enum: GREETING/TALK/GAME), agent_id (string), agent_name (string), agent_description (text), weight (float, default 1.0), is_active (boolean, default true), created_at (timestamp), and updated_at (timestamp)
 
 3. WHEN querying PHRASE3_PHASE3_PHASE3_FRIENDship data, THE Context Handling Service SHALL utilize indexes on PHRASE3_PHASE3_PHASE3_FRIENDship_level and last_interaction_date columns to optimize query performance
 
@@ -110,7 +110,7 @@ This document specifies the requirements for the Context Handling - PHRASE3_PHAS
 
 2. WHEN PHRASE3_PHASE3_PHASE3_FRIENDship_score_change is applied, THE Context Handling Service SHALL increment the existing PHRASE3_PHASE3_PHASE3_FRIENDship_score by the change amount
 
-3. WHEN PHRASE3_PHASE3_PHASE3_FRIENDship_score crosses a threshold, THE Context Handling Service SHALL update PHRASE3_PHASE3_PHASE3_FRIENDship_level to PHASE1_PHASE1_STRANGER (0-100), PHASE2_PHASE2_ACQUAINTANCE (100-500), or PHRASE3_PHASE3_PHASE3_FRIEND (500+)
+3. WHEN PHRASE3_PHASE3_PHASE3_FRIENDship_score crosses a threshold, THE Context Handling Service SHALL update PHRASE3_PHASE3_PHASE3_FRIENDship_level to PHASE1_STRANGER (0-100), PHASE2_ACQUAINTANCE (100-500), or PHRASE3_PHASE3_PHASE3_FRIEND (500+)
 
 4. WHEN updating on the same calendar day as last_interaction_date, THE Context Handling Service SHALL maintain the current streak_day value
 

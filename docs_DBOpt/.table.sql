@@ -32,7 +32,7 @@ CREATE TABLE friendship_agent_mapping (
     -- PHASE1_STRANGER, PHASE2_ACQUAINTANCE, PHASE3_FRIEND
 
     agent_type VARCHAR(50) NOT NULL,
-    -- GREETING, TALK, GAME_ACTIVITY
+    -- GREETING, TALK, GAME
 
     topic VARCHAR(100),
     -- Chủ đề gắn với agent: ví dụ 'pets', 'school', 'movie'

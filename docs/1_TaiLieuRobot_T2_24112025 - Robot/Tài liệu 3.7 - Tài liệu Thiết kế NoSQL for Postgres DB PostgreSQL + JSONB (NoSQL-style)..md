@@ -666,7 +666,7 @@ def health_check():
 ```python
 from enum import Enum
 
-class FriendshipLevel(str, Enum):
+class FriendshipPhase(str, Enum):
     PHASE1_STRANGER = "PHASE1_STRANGER"
     PHASE2_ACQUAINTANCE = "PHASE2_ACQUAINTANCE"
     PHASE3_FRIEND = "PHASE3_FRIEND"

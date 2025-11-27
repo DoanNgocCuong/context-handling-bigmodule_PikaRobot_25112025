@@ -812,7 +812,7 @@ CREATE TABLE friendship_agent_mapping (
 
     agent_type VARCHAR(50) NOT NULL,
 
-    -- GREETING, TALK, GAME_ACTIVITY
+    -- GREETING, TALK, GAME
 
   
 
@@ -871,7 +871,7 @@ ON friendship_agent_mapping(topic);
 | :-------------------- | :----------- | :--------------------------------------------------------------- |
 | `id`                | SERIAL       | Primary key                                                      |
 | `friendship_level`  | VARCHAR(50)  | PHASE1_STRANGER / PHASE2_ACQUAINTANCE / PHASE3_FRIEND                                 |
-| `agent_type`        | VARCHAR(50)  | GREETING / TALK / GAME_ACTIVITY                                  |
+| `agent_type`        | VARCHAR(50)  | GREETING / TALK / GAME                                  |
 | `agent_id`          | VARCHAR(255) | ID duy nhất của agent                                          |
 | `agent_name`        | VARCHAR(255) | Tên agent (hiển thị cho user)                                 |
 | `agent_description` | TEXT         | Mô tả chi tiết                                                |
@@ -899,8 +899,8 @@ VALUES
 -- Game agents cho PHASE1_STRANGER
 INSERT INTO friendship_agent_mapping (friendship_level, agent_type, agent_id, agent_name, agent_description, weight, is_active)
 VALUES 
-('PHASE1_STRANGER', 'GAME_ACTIVITY', 'game_drawing', 'Drawing Game', 'Trò chơi vẽ', 1.0, TRUE),
-('PHASE1_STRANGER', 'GAME_ACTIVITY', 'game_riddle', 'Riddle Game', 'Trò chơi đố', 0.9, TRUE);
+('PHASE1_STRANGER', 'GAME', 'game_drawing', 'Drawing Game', 'Trò chơi vẽ', 1.0, TRUE),
+('PHASE1_STRANGER', 'GAME', 'game_riddle', 'Riddle Game', 'Trò chơi đố', 0.9, TRUE);
 
 -- Greeting agents cho PHASE2_ACQUAINTANCE
 INSERT INTO friendship_agent_mapping (friendship_level, agent_type, agent_id, agent_name, agent_description, weight, is_active)
@@ -917,8 +917,8 @@ VALUES
 -- Game agents cho PHASE2_ACQUAINTANCE
 INSERT INTO friendship_agent_mapping (friendship_level, agent_type, agent_id, agent_name, agent_description, weight, is_active)
 VALUES 
-('PHASE2_ACQUAINTANCE', 'GAME_ACTIVITY', 'game_20questions', '20 Questions', 'Trò chơi 20 câu hỏi', 1.0, TRUE),
-('PHASE2_ACQUAINTANCE', 'GAME_ACTIVITY', 'game_story_building', 'Story Building', 'Xây dựng câu chuyện chung', 1.5, TRUE);
+('PHASE2_ACQUAINTANCE', 'GAME', 'game_20questions', '20 Questions', 'Trò chơi 20 câu hỏi', 1.0, TRUE),
+('PHASE2_ACQUAINTANCE', 'GAME', 'game_story_building', 'Story Building', 'Xây dựng câu chuyện chung', 1.5, TRUE);
 
 -- Greeting agents cho PHASE3_FRIEND
 INSERT INTO friendship_agent_mapping (friendship_level, agent_type, agent_id, agent_name, agent_description, weight, is_active)
@@ -935,8 +935,8 @@ VALUES
 -- Game agents cho PHASE3_FRIEND
 INSERT INTO friendship_agent_mapping (friendship_level, agent_type, agent_id, agent_name, agent_description, weight, is_active)
 VALUES 
-('PHASE3_FRIEND', 'GAME_ACTIVITY', 'game_adventure', 'Adventure Quest', 'Cuộc phiêu lưu chung', 1.5, TRUE),
-('PHASE3_FRIEND', 'GAME_ACTIVITY', 'game_collaborative_art', 'Collaborative Art', 'Tạo tác phẩm nghệ thuật chung', 2.0, TRUE);
+('PHASE3_FRIEND', 'GAME', 'game_adventure', 'Adventure Quest', 'Cuộc phiêu lưu chung', 1.5, TRUE),
+('PHASE3_FRIEND', 'GAME', 'game_collaborative_art', 'Collaborative Art', 'Tạo tác phẩm nghệ thuật chung', 2.0, TRUE);
 ```
 
 ### 7.3 Bảng phụ 1: agent_prompting để giao tiếp với phía Academy Prompting
@@ -1327,7 +1327,7 @@ user_id VARCHAR(255) NOT NULL,
 
 bot_type VARCHAR(50) NOT NULL
 
-CHECK (bot_type IN ('GREETING', 'TALK', 'GAME_ACTIVITY')),
+CHECK (bot_type IN ('GREETING', 'TALK', 'GAME')),
 
 bot_id VARCHAR(255) NOT NULL,
 
@@ -1426,7 +1426,7 @@ ON conversation_events USING GIN (conversation_log);
 | `id`                      | SERIAL       | Primary key                                         | Auto-increment           |
 | `conversation_id`         | VARCHAR(255) | ID conversation                                     | UNIQUE, required         |
 | `user_id`                 | VARCHAR(255) | ID user                                             | Required, indexed        |
-| `bot_type`                | VARCHAR(50)  | GREETING / TALK / GAME_ACTIVITY                     | Required, checked        |
+| `bot_type`                | VARCHAR(50)  | GREETING / TALK / GAME                     | Required, checked        |
 | `bot_id`                  | VARCHAR(255) | ID của bot                                         | Required                 |
 | `bot_name`                | VARCHAR(255) | Tên của bot                                       | Required                 |
 | `start_time`              | TIMESTAMP    | Thời điểm bắt đầu                             | Required                 |
@@ -1512,7 +1512,7 @@ context-handling-service/
 │   ├── core/                                    # Core configuration & constants
 │   │   ├── __init__.py
 │   │   ├── config_settings.py                   # ✅ Settings & environment variables
-│   │   ├── constants_enums.py                   # ✅ Constants & enums (FriendshipLevel, AgentType, etc.)
+│   │   ├── constants_enums.py                   # ✅ Constants & enums (FriendshipPhase, AgentType, etc.)
 │   │   ├── exceptions_custom.py                 # ✅ Custom exceptions (FriendshipNotFoundError, etc.)
 │   │   └── status_codes.py                      # ✅ HTTP status codes & error messages
 │   │
@@ -1682,7 +1682,7 @@ settings = Settings()
 # app/core/constants.py
 from enum import Enum
 
-class FriendshipLevel(str, Enum):
+class FriendshipPhase(str, Enum):
     PHASE1_STRANGER = "PHASE1_STRANGER"
     PHASE2_ACQUAINTANCE = "PHASE2_ACQUAINTANCE"
     PHASE3_FRIEND = "PHASE3_FRIEND"
@@ -1690,13 +1690,13 @@ class FriendshipLevel(str, Enum):
 class AgentType(str, Enum):
     GREETING = "GREETING"
     TALK = "TALK"
-    GAME_ACTIVITY = "GAME_ACTIVITY"
+    GAME = "GAME"
 
 # Score thresholds
 PHASE3_FRIENDSHIP_SCORE_THRESHOLDS = {
-    FriendshipLevel.PHASE1_STRANGER: (0, 100),
-    FriendshipLevel.PHASE2_ACQUAINTANCE: (100, 500),
-    FriendshipLevel.PHASE3_FRIEND: (500, float('inf'))
+    FriendshipPhase.PHASE1_STRANGER: (0, 100),
+    FriendshipPhase.PHASE2_ACQUAINTANCE: (100, 500),
+    FriendshipPhase.PHASE3_FRIEND: (500, float('inf'))
 }
 ```
 
@@ -2256,7 +2256,7 @@ curl -X GET http://localhost:8000/v1/conversations/conv_abc123xyz
 | `conversation_id`  | String   | ID của conversation                       |
 | `user_id`          | String   | ID của user                               |
 | `agent_id`         | String   | ID của agent được sử dụng            |
-| `agent_type`       | String   | Loại agent: GREETING, TALK, GAME_ACTIVITY |
+| `agent_type`       | String   | Loại agent: GREETING, TALK, GAME |
 | `start_time`       | DateTime | Thời điểm bắt đầu                    |
 | `end_time`         | DateTime | Thời điểm kết thúc                    |
 | `duration_seconds` | Integer  | Thời lượng (giây)                      |
@@ -2452,7 +2452,7 @@ curl -X POST http://localhost:8000/v1/activities/suggest \
       {
         "agent_id": "game_20questions",
         "agent_name": "20 Questions",
-        "agent_type": "GAME_ACTIVITY",
+        "agent_type": "GAME",
         "agent_description": "Trò chơi 20 câu hỏi",
         "final_prompt": null,
         "reason": "Weighted random selection"
@@ -2460,7 +2460,7 @@ curl -X POST http://localhost:8000/v1/activities/suggest \
       {
         "agent_id": "game_story_building",
         "agent_name": "Story Building",
-        "agent_type": "GAME_ACTIVITY",
+        "agent_type": "GAME",
         "agent_description": "Xây dựng câu chuyện chung",
         "final_prompt": null,
         "reason": "Weighted random selection"
@@ -2497,7 +2497,7 @@ curl -X POST http://localhost:8000/v1/activities/suggest \
 | :------------------- | :------- | :------- | :--------------------------------------------- |
 | `agent_id`         | String   | Yes      | ID duy nhất của agent                        |
 | `agent_name`       | String   | Yes      | Tên hiển thị của agent                       |
-| `agent_type`       | String   | Yes      | Loại agent: GREETING, TALK, GAME_ACTIVITY    |
+| `agent_type`       | String   | Yes      | Loại agent: GREETING, TALK, GAME    |
 | `agent_description` | String   | No       | Mô tả agent từ bảng friendship_agent_mapping (có thể null) |
 | `final_prompt`     | String   | No       | Final prompt từ bảng agent_prompting (có thể null nếu chưa có) |
 | `reason`           | String   | No       | Lý do agent này được chọn                     |
@@ -2528,7 +2528,7 @@ GET /agent-mappings
 | Parameter            | Type   | Required | Description                                     |
 | :------------------- | :----- | :------- | :---------------------------------------------- |
 | `friendship_level` | String | No       | Lọc theo level: PHASE1_STRANGER, PHASE2_ACQUAINTANCE, PHASE3_FRIEND |
-| `agent_type`       | String | No       | Lọc theo loại: GREETING, TALK, GAME_ACTIVITY  |
+| `agent_type`       | String | No       | Lọc theo loại: GREETING, TALK, GAME  |
 
 ###### cURL Examples
 

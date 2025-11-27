@@ -204,7 +204,7 @@ class ConversationDataFetchService:
             agent_type = "GREETING"
             agent_id = "greeting_welcome"
         elif "game" in conversation_id.lower():
-            agent_type = "GAME_ACTIVITY"
+            agent_type = "GAME"
             agent_id = "game_20questions"
         
         return {

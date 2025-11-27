@@ -470,7 +470,7 @@ curl -X POST http://localhost:8000/v1/activities/suggest \
     {
       "id": 12,
       "friendship_level": "PHASE2_ACQUAINTANCE",
-      "agent_type": "GAME_ACTIVITY",
+      "agent_type": "GAME",
       "agent_id": "game_20questions",
       "agent_name": "20 Questions",
       "agent_description": "Trò chơi 20 câu hỏi",
@@ -480,7 +480,7 @@ curl -X POST http://localhost:8000/v1/activities/suggest \
     {
       "id": 13,
       "friendship_level": "PHASE2_ACQUAINTANCE",
-      "agent_type": "GAME_ACTIVITY",
+      "agent_type": "GAME",
       "agent_id": "game_story_building",
       "agent_name": "Story Building",
       "agent_description": "Xây dựng câu chuyện chung",
@@ -533,7 +533,7 @@ curl -X POST http://localhost:8000/v1/activities/suggest \
     {
       "id": 6,
       "friendship_level": "PHASE1_STRANGER",
-      "agent_type": "GAME_ACTIVITY",
+      "agent_type": "GAME",
       "agent_id": "game_drawing",
       "agent_name": "Drawing Game",
       "agent_description": "Trò chơi vẽ",
@@ -543,7 +543,7 @@ curl -X POST http://localhost:8000/v1/activities/suggest \
     {
       "id": 7,
       "friendship_level": "PHASE1_STRANGER",
-      "agent_type": "GAME_ACTIVITY",
+      "agent_type": "GAME",
       "agent_id": "game_riddle",
       "agent_name": "Riddle Game",
       "agent_description": "Trò chơi đố",
@@ -571,7 +571,7 @@ GET /agent-mappings
 | Parameter | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
 | `friendship_level` | String | No | Lọc theo level: PHASE1_STRANGER, PHASE2_ACQUAINTANCE, PHASE3_FRIEND |
-| `agent_type` | String | No | Lọc theo loại: GREETING, TALK, GAME_ACTIVITY |
+| `agent_type` | String | No | Lọc theo loại: GREETING, TALK, GAME |
 
 #### cURL Examples
 

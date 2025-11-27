@@ -208,7 +208,7 @@ settings = Settings()
 # app/core/constants.py
 from enum import Enum
 
-class FriendshipLevel(str, Enum):
+class FriendshipPhase(str, Enum):
     PHASE1_STRANGER = "PHASE1_STRANGER"
     PHASE2_ACQUAINTANCE = "PHASE2_ACQUAINTANCE"
     PHASE3_FRIEND = "PHASE3_FRIEND"
@@ -216,13 +216,13 @@ class FriendshipLevel(str, Enum):
 class AgentType(str, Enum):
     GREETING = "GREETING"
     TALK = "TALK"
-    GAME_ACTIVITY = "GAME_ACTIVITY"
+    GAME = "GAME"
 
 # Score thresholds
 PHASE3_FRIENDSHIP_SCORE_THRESHOLDS = {
-    FriendshipLevel.PHASE1_STRANGER: (0, 100),
-    FriendshipLevel.PHASE2_ACQUAINTANCE: (100, 500),
-    FriendshipLevel.PHASE3_FRIEND: (500, float('inf'))
+    FriendshipPhase.PHASE1_STRANGER: (0, 100),
+    FriendshipPhase.PHASE2_ACQUAINTANCE: (100, 500),
+    FriendshipPhase.PHASE3_FRIEND: (500, float('inf'))
 }
 ```
 

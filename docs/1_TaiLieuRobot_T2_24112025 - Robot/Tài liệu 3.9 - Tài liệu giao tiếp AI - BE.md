@@ -98,7 +98,7 @@ curl -X POST http://localhost:8000/v1/activities/suggest \
     {
       "id": 12,
       "friendship_level": "PHASE2_ACQUAINTANCE",
-      "agent_type": "GAME_ACTIVITY",
+      "agent_type": "GAME",
       "agent_id": "game_20questions",
       "agent_name": "20 Questions",
       "agent_description": "Trò chơi 20 câu hỏi",
@@ -109,7 +109,7 @@ curl -X POST http://localhost:8000/v1/activities/suggest \
     {
       "id": 13,
       "friendship_level": "PHASE2_ACQUAINTANCE",
-      "agent_type": "GAME_ACTIVITY",
+      "agent_type": "GAME",
       "agent_id": "game_story_building",
       "agent_name": "Story Building",
       "agent_description": "Xây dựng câu chuyện chung",

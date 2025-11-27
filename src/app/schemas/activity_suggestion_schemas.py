@@ -21,7 +21,7 @@ class AgentDetail(BaseModel):
     """
     agent_id: str = Field(..., description="ID duy nhất của agent")
     agent_name: str = Field(..., description="Tên hiển thị của agent")
-    agent_type: str = Field(..., description="Loại agent: GREETING, TALK, GAME_ACTIVITY")
+    agent_type: str = Field(..., description="Loại agent: GREETING, TALK, GAME")
     agent_description: Optional[str] = Field(None, description="Mô tả agent từ bảng friendship_agent_mapping")
     final_prompt: Optional[str] = Field(None, description="Final prompt từ bảng agent_prompting (có thể None nếu chưa có)")
     reason: Optional[str] = Field(None, description="Lý do agent này được chọn")
@@ -78,13 +78,13 @@ class ActivitySuggestionData(BaseModel):
                     {
                         "agent_id": "game_20questions",
                         "agent_name": "20 Questions",
-                        "agent_type": "GAME_ACTIVITY",
+                        "agent_type": "GAME",
                         "reason": "Weighted random selection"
                     },
                     {
                         "agent_id": "game_story_building",
                         "agent_name": "Story Building",
-                        "agent_type": "GAME_ACTIVITY",
+                        "agent_type": "GAME",
                         "reason": "Weighted random selection"
                     }
                 ]

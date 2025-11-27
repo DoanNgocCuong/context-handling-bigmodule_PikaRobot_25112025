@@ -149,7 +149,7 @@ def _generate_mock_conversation_data(conversation_id: str) -> Dict[str, Any]:
         agent_type = "GREETING"
         agent_id = "greeting_welcome"
     elif "game" in conversation_id.lower():
-        agent_type = "GAME_ACTIVITY"
+        agent_type = "GAME"
         agent_id = "game_20questions"
     
     end_time = base_time + timedelta(seconds=1200)

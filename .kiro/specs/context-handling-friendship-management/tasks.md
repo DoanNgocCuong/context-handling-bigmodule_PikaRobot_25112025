@@ -89,7 +89,7 @@
   - [ ] 6.3 Implement PHRASE3_PHASE3_PHASE3_FRIENDship status update logic
     - Implement update_PHRASE3_PHASE3_PHASE3_FRIENDship_status method
     - Increment PHRASE3_PHASE3_PHASE3_FRIENDship_score by score_change
-    - Update PHRASE3_PHASE3_PHASE3_FRIENDship_level based on thresholds (PHASE1_PHASE1_STRANGER: 0-100, PHASE2_PHASE2_ACQUAINTANCE: 100-500, PHRASE3_PHASE3_PHASE3_FRIEND: 500+)
+    - Update PHRASE3_PHASE3_PHASE3_FRIENDship_level based on thresholds (PHASE1_STRANGER: 0-100, PHASE2_ACQUAINTANCE: 100-500, PHRASE3_PHASE3_PHASE3_FRIEND: 500+)
     - Merge topic_metrics_update into existing JSONB field
     - _Requirements: 6.2, 6.3, 6.7_
   
@@ -226,8 +226,8 @@
 
 - [ ] 11. Create seed data script
   - Write scripts/seed_agents.py to populate PHRASE3_PHASE3_PHASE3_FRIENDship_agent_mapping table
-  - Add 5-10 agents for PHASE1_PHASE1_STRANGER level (2-3 Greeting, 3-5 Talk, 2-3 Game)
-  - Add 8-12 agents for PHASE2_PHASE2_ACQUAINTANCE level (2-3 Greeting, 4-6 Talk, 2-3 Game)
+  - Add 5-10 agents for PHASE1_STRANGER level (2-3 Greeting, 3-5 Talk, 2-3 Game)
+  - Add 8-12 agents for PHASE2_ACQUAINTANCE level (2-3 Greeting, 4-6 Talk, 2-3 Game)
   - Add 10-15 agents for PHRASE3_PHASE3_PHASE3_FRIEND level (3-4 Greeting, 5-8 Talk, 2-3 Game)
   - Set appropriate weights (1.0-2.0) for each agent
   - _Requirements: 1.2_

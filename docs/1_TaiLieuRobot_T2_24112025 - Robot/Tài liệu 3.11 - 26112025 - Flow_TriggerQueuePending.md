@@ -1878,7 +1878,7 @@ Bạn có thể copy hơi rút gọn thế này cho dev BE/AI:
 > {
 >   "conversation_id": "...",
 >   "profile_id": "...",
->   "bot_type": "TALK | GREETING | GAME_ACTIVITY",
+>   "bot_type": "TALK | GREETING | GAME",
 >   "bot_id": "...",
 >   "bot_name": "...",
 >   "start_time": "...",

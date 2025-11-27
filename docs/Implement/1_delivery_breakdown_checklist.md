@@ -106,7 +106,7 @@ CREATE INDEX idx_last_interaction_date ON friendship_status(last_interaction_dat
 CREATE TABLE friendship_agent_mapping (
     id SERIAL PRIMARY KEY,
     friendship_level VARCHAR(50) NOT NULL CHECK (friendship_level IN ('PHASE1_STRANGER', 'PHASE2_ACQUAINTANCE', 'PHASE3_FRIEND')),
-    agent_type VARCHAR(50) NOT NULL CHECK (agent_type IN ('GREETING', 'TALK', 'GAME_ACTIVITY')),
+    agent_type VARCHAR(50) NOT NULL CHECK (agent_type IN ('GREETING', 'TALK', 'GAME')),
     agent_id VARCHAR(255) NOT NULL,
     agent_name VARCHAR(255) NOT NULL,
     agent_description TEXT,
@@ -202,8 +202,8 @@ AGENTS_DATA = [
     {"friendship_level": "PHASE1_STRANGER", "agent_type": "TALK", "agent_id": "talk_school", "agent_name": "School", "weight": 1.0},
     
     # PHASE1_STRANGER Level - Game
-    {"friendship_level": "PHASE1_STRANGER", "agent_type": "GAME_ACTIVITY", "agent_id": "game_drawing", "agent_name": "Drawing", "weight": 1.0},
-    {"friendship_level": "PHASE1_STRANGER", "agent_type": "GAME_ACTIVITY", "agent_id": "game_riddle", "agent_name": "Riddle", "weight": 0.9},
+    {"friendship_level": "PHASE1_STRANGER", "agent_type": "GAME", "agent_id": "game_drawing", "agent_name": "Drawing", "weight": 1.0},
+    {"friendship_level": "PHASE1_STRANGER", "agent_type": "GAME", "agent_id": "game_riddle", "agent_name": "Riddle", "weight": 0.9},
     
     # ... more agents for PHASE2_ACQUAINTANCE and PHASE3_FRIEND levels
 ]
@@ -644,7 +644,7 @@ def select_game_agents(user_id: str, friendship_level: str, count: int = 2) -> l
     """
     agents = db.query(FriendshipAgentMapping).filter(
         FriendshipAgentMapping.friendship_level == friendship_level,
-        FriendshipAgentMapping.agent_type == "GAME_ACTIVITY",
+        FriendshipAgentMapping.agent_type == "GAME",
         FriendshipAgentMapping.is_active == True
     ).all()
     

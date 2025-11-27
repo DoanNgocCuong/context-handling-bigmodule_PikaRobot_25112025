@@ -132,7 +132,7 @@ context-handling-service/
 │   │   ├── validators.py
 │   │   ├── converters.py
 │   │   ├── constants.py
-│   │   ├── enums.py                   # Enums: FriendshipLevel, Phase, AgentType, etc.
+│   │   ├── enums.py                   # Enums: FriendshipPhase, Phase, AgentType, etc.
 │   │   └── helpers.py
 │   │
 │   ├── exceptions/                    # Custom Exceptions (shared)
@@ -330,7 +330,7 @@ File `src/models/schemas.py` chứa tất cả Pydantic schemas cho request/resp
 ### 5.4. Enums và Constants
 
 File `src/utils/enums.py` chứa các enum được sử dụng bởi cả hai modules:
-- `FriendshipLevel` (PHASE1_STRANGER, PHASE2_ACQUAINTANCE, PHASE3_FRIEND)
+- `FriendshipPhase` (PHASE1_STRANGER, PHASE2_ACQUAINTANCE, PHASE3_FRIEND)
 - `Phase` (PHASE_1, PHASE_2, PHASE_3)
 - `AgentType` (GREETING, TALK, GAME)
 - `Emotion` (interesting, boring, neutral, happy, sad)

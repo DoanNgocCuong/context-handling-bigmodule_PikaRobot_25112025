@@ -2,6 +2,7 @@
 Constants and Enums for the application.
 """
 from enum import Enum
+from typing import Dict
 
 
 class FriendshipLevel(str, Enum):
@@ -16,7 +17,7 @@ class AgentType(str, Enum):
     DEFAULT = ""
     GREETING = "GREETING"
     TALK = "TALK"
-    GAME_ACTIVITY = "GAME_ACTIVITY"
+    GAME = "GAME"
 
 
 class ConversationEventStatus(str, Enum):
@@ -39,7 +40,7 @@ PHASE3_FRIENDSHIP_SCORE_THRESHOLDS = {
 DEFAULT_PHASE3_FRIENDSHIP_SCORE = 0.0
 DEFAULT_PHASE3_FRIENDSHIP_LEVEL = FriendshipLevel.PHASE1_STRANGER
 DEFAULT_STREAK_DAY = 0
-DEFAULT_TOPIC_METRICS = {}
+DEFAULT_TOPIC_METRICS: Dict = {}
 
 # Cache TTL (in seconds)
 CACHE_TTL_CANDIDATES = 21600  # 6 hours
