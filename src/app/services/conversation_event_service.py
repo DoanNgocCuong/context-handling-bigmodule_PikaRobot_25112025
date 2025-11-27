@@ -26,6 +26,7 @@ from app.services.friendship_score_calculation_service import (
 )
 from app.services.friendship_status_update_service import FriendshipStatusUpdateService
 from app.utils.logger_setup import get_logger
+from app.utils.color_log import success, error, warning, info, key_value
 from app.utils.conversation_log_transform import (
     transform_conversation_logs,
     is_api_format,
@@ -69,10 +70,11 @@ class ConversationEventService:
             bot_count = sum(1 for item in raw_logs if "BOT" in str(item.get("character", "")).upper())
             user_count = sum(1 for item in raw_logs if "USER" in str(item.get("character", "")).upper())
             logger.info(
-                f"📥 Raw conversation_logs received | "
-                f"conversation_id={request.conversation_id} | "
-                f"total={len(raw_logs)} | "
-                f"BOT={bot_count} | USER={user_count}"
+                f"📥 {info('Raw conversation_logs received')} | "
+                f"{key_value('conversation_id', request.conversation_id)} | "
+                f"{key_value('total', str(len(raw_logs)))} | "
+                f"{key_value('BOT', str(bot_count))} | "
+                f"{key_value('USER', str(user_count))}"
             )
         
         # Store raw data before transformation

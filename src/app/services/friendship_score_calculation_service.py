@@ -6,6 +6,7 @@ Follows Single Responsibility Principle (SRP).
 """
 from typing import Dict, List, Any, Optional
 from app.utils.logger_setup import get_logger
+from app.utils.color_log import success, error, warning, info, key_value
 from app.core.exceptions_custom import InvalidScoreError, ConversationNotFoundError
 
 logger = get_logger(__name__)
@@ -169,18 +170,18 @@ class FriendshipScoreCalculationService:
             
             # Log calculation breakdown
             logger.info(
-                f"📊 Score Calculation Breakdown | "
-                f"total_turns={total_turns} | "
-                f"user_questions={user_initiated_questions} | "
-                f"emotion={session_emotion} | "
-                f"memories={new_memories_count}"
+                f"📊 {info('Score Calculation Breakdown')} | "
+                f"{key_value('total_turns', str(total_turns))} | "
+                f"{key_value('user_questions', str(user_initiated_questions))} | "
+                f"{key_value('emotion', session_emotion)} | "
+                f"{key_value('memories', str(new_memories_count))}"
             )
             logger.info(
-                f"💰 Score Components | "
-                f"base_score={base_score:.1f} | "
-                f"engagement_bonus={engagement_bonus:.1f} | "
-                f"emotion_bonus={emotion_bonus:.1f} | "
-                f"memory_bonus={memory_bonus:.1f}"
+                f"💰 {info('Score Components')} | "
+                f"{key_value('base_score', f'{base_score:.1f}')} | "
+                f"{key_value('engagement_bonus', f'{engagement_bonus:.1f}')} | "
+                f"{key_value('emotion_bonus', f'{emotion_bonus:.1f}')} | "
+                f"{key_value('memory_bonus', f'{memory_bonus:.1f}')}"
             )
             
             # Combine all components
@@ -196,9 +197,11 @@ class FriendshipScoreCalculationService:
             
             if final_score == 0.0:
                 logger.warning(
-                    f"⚠️  Final score = 0.0 | "
-                    f"Check: total_turns={total_turns}, user_questions={user_initiated_questions}, "
-                    f"emotion={session_emotion}, memories={new_memories_count}"
+                    f"{warning('⚠️  Final score = 0.0')} | "
+                    f"Check: {key_value('total_turns', str(total_turns))}, "
+                    f"{key_value('user_questions', str(user_initiated_questions))}, "
+                    f"{key_value('emotion', session_emotion)}, "
+                    f"{key_value('memories', str(new_memories_count))}"
                 )
             
             return final_score
@@ -267,12 +270,14 @@ class FriendshipScoreCalculationService:
         
         if turns == 0 and len(conversation_log) > 0:
             logger.warning(
-                f"⚠️  No complete turns found! | total_messages={len(conversation_log)} | "
-                f"pika={pika_count} | user={user_count} | "
+                f"{warning('⚠️  No complete turns found!')} | "
+                f"{key_value('total_messages', str(len(conversation_log)))} | "
+                f"{key_value('pika', str(pika_count))} | "
+                f"{key_value('user', str(user_count))} | "
                 f"Reason: Conversation log chỉ có messages từ 1 speaker (không có cặp trao đổi)"
             )
         
-        logger.debug(f"✅ Total complete turns: {turns}")
+        logger.debug(f"{success('✅')} Total complete turns: {turns}")
         return turns
     
     def _count_user_initiated_questions(

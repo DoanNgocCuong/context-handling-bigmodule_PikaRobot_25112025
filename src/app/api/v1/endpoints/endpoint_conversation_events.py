@@ -16,6 +16,7 @@ from app.schemas.conversation_event_schemas import (
 from app.services.conversation_event_service import ConversationEventService
 from app.background.rabbitmq_publisher import publish_conversation_event
 from app.utils.logger_setup import get_logger
+from app.utils.color_log import success, error, warning, info, key_value, status_code
 
 logger = get_logger(__name__)
 
@@ -48,17 +49,21 @@ async def create_conversation_event(
     # 📥 LOG: Nhận request
     logger.info(
         f"📥 POST /conversations/end | "
-        f"conversation_id={conversation_id} | "
-        f"user_id={user_id} | "
-        f"bot_id={bot_id} | "
-        f"logs={log_count} items"
+        f"{key_value('conversation_id', conversation_id)} | "
+        f"{key_value('user_id', user_id)} | "
+        f"{key_value('bot_id', bot_id)} | "
+        f"{key_value('logs', f'{log_count} items')}"
     )
     
     try:
         # STEP 1: Create event (save to DB, status=PENDING)
         logger.debug(f"💾 Saving conversation event to DB: {conversation_id}")
         data = service.create_event(request)
-        logger.info(f"✅ Saved to DB | conversation_id={conversation_id} | event_id={data.get('id')}")
+        logger.info(
+            f"{success('✅ Saved to DB')} | "
+            f"{key_value('conversation_id', conversation_id)} | "
+            f"{key_value('event_id', str(data.get('id')))}"
+        )
         
         # STEP 2: Publish to RabbitMQ queue for async processing
         logger.debug(f"📤 Publishing to RabbitMQ queue: {conversation_id}")
@@ -69,18 +74,24 @@ async def create_conversation_event(
                 bot_id=data["bot_id"],
                 conversation_log=data.get("conversation_log", [])
             )
-            logger.info(f"✅ Published to queue | conversation_id={conversation_id}")
+            logger.info(
+                f"{success('✅ Published to queue')} | "
+                f"{key_value('conversation_id', conversation_id)}"
+            )
         except Exception as publish_error:
             # Don't fail API if publish fails - background scheduler will retry
             logger.warning(
-                f"⚠️  Failed to publish to RabbitMQ | conversation_id={conversation_id} | "
-                f"error={str(publish_error)} | Background scheduler will retry"
+                f"{warning('⚠️  Failed to publish to RabbitMQ')} | "
+                f"{key_value('conversation_id', conversation_id)} | "
+                f"{key_value('error', str(publish_error))} | "
+                f"Background scheduler will retry"
             )
         
         # STEP 3: Return 202 Accepted immediately
         logger.info(
-            f"✅ 202 Accepted | conversation_id={conversation_id} | "
-            f"response_time=<100ms (async processing)"
+            f"{success('✅')} {status_code(202)} Accepted | "
+            f"{key_value('conversation_id', conversation_id)} | "
+            f"{key_value('response_time', '<100ms (async processing)')}"
         )
         return ConversationEventCreateResponse(
             success=True,
@@ -89,8 +100,9 @@ async def create_conversation_event(
         )
     except ConversationEventAlreadyExistsError as exc:
         logger.warning(
-            f"❌ 409 Conflict | conversation_id={conversation_id} | "
-            f"error=Duplicate conversation event"
+            f"{error('❌')} {status_code(409)} Conflict | "
+            f"{key_value('conversation_id', conversation_id)} | "
+            f"{key_value('error', 'Duplicate conversation event')}"
         )
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -102,8 +114,9 @@ async def create_conversation_event(
         ) from exc
     except ConversationEventValidationError as exc:
         logger.warning(
-            f"❌ 400 Bad Request | conversation_id={conversation_id} | "
-            f"error=Invalid payload: {str(exc)}"
+            f"{error('❌')} {status_code(400)} Bad Request | "
+            f"{key_value('conversation_id', conversation_id)} | "
+            f"{key_value('error', f'Invalid payload: {str(exc)}')}"
         )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -115,8 +128,9 @@ async def create_conversation_event(
         ) from exc
     except Exception as exc:  # pragma: no cover - defensive programming
         logger.error(
-            f"❌ 500 Internal Error | conversation_id={conversation_id} | "
-            f"error={str(exc)}",
+            f"{error('❌')} {status_code(500)} Internal Error | "
+            f"{key_value('conversation_id', conversation_id)} | "
+            f"{key_value('error', str(exc))}",
             exc_info=True
         )
         raise HTTPException(

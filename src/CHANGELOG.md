@@ -9,4 +9,6 @@
 4. Thứ 4 code 70-80%
 5. Thứ 5 ghép thông luồng và 85% logic
 6. OT ghép hoàn thiện
-7.
+
+
+![1764270998139](image/CHANGELOG/1764270998139.png)

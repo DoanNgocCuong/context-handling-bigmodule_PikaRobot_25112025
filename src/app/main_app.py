@@ -13,6 +13,7 @@ from app.background.conversation_event_scheduler import (
     start_background_jobs,
 )
 from app.utils.logger_setup import get_logger
+from app.utils.color_log import success, error, warning, info, key_value, status_code
 
 logger = get_logger(__name__)
 
@@ -48,9 +49,9 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         
         # Log request details
         logger.info(
-            f"🌐 {method} {path} | "
-            f"client_ip={client_ip} | "
-            f"query_params={dict(request.query_params)}"
+            f"🌐 {info(method)} {path} | "
+            f"{key_value('client_ip', client_ip)} | "
+            f"{key_value('query_params', str(dict(request.query_params)))}"
         )
         
         # Process request
@@ -59,11 +60,12 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         # Calculate processing time
         process_time = time.time() - start_time
         
-        # Log response
+        # Log response with color based on status code
+        status_colored = status_code(response.status_code)
         logger.info(
-            f"✅ {method} {path} | "
-            f"status={response.status_code} | "
-            f"time={process_time:.3f}s"
+            f"{success('✅')} {info(method)} {path} | "
+            f"status={status_colored} | "
+            f"{key_value('time', f'{process_time:.3f}s')}"
         )
         
         return response

@@ -36,9 +36,11 @@ curl http://localhost:8000/v1/health
 ## API Endpoints
 
 ### Health Check
+
 - `GET /v1/health` - Check service health status
 
 ### Documentation
+
 - `GET /docs` - Swagger UI (development only)
 - `GET /redoc` - ReDoc documentation (development only)
 

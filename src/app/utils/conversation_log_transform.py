@@ -6,6 +6,7 @@ Converts conversation logs from API format to standardized format.
 from typing import Any, Dict, List
 from datetime import datetime
 from app.utils.logger_setup import get_logger
+from app.utils.color_log import success, error, warning, info, key_value
 
 logger = get_logger(__name__)
 
@@ -46,9 +47,10 @@ def transform_conversation_logs(
     bot_count = sum(1 for item in conversation_logs if "BOT" in item.get("character", "").upper())
     user_count = sum(1 for item in conversation_logs if "USER" in item.get("character", "").upper())
     logger.info(
-        f"🔄 Transforming conversation logs | "
-        f"total={len(conversation_logs)} | "
-        f"BOT={bot_count} | USER={user_count}"
+        f"🔄 {info('Transforming conversation logs')} | "
+        f"{key_value('total', str(len(conversation_logs)))} | "
+        f"{key_value('BOT', str(bot_count))} | "
+        f"{key_value('USER', str(user_count))}"
     )
     
     transformed = []
@@ -106,16 +108,17 @@ def transform_conversation_logs(
     user_count = sum(1 for item in transformed if item.get("speaker") == "user")
     
     logger.info(
-        f"✅ Transformation complete | "
-        f"input={len(conversation_logs)} | "
-        f"output={len(transformed)} | "
-        f"skipped={skipped_count} | "
-        f"pika={pika_count} | user={user_count}"
+        f"{success('✅ Transformation complete')} | "
+        f"{key_value('input', str(len(conversation_logs)))} | "
+        f"{key_value('output', str(len(transformed)))} | "
+        f"{key_value('skipped', str(skipped_count))} | "
+        f"{key_value('pika', str(pika_count))} | "
+        f"{key_value('user', str(user_count))}"
     )
     
     if user_count == 0 and len(conversation_logs) > 0:
         logger.warning(
-            f"⚠️  WARNING: No USER messages found after transformation! | "
+            f"{warning('⚠️  WARNING: No USER messages found after transformation!')} | "
             f"Check raw_conversation_log for USER_RESPONSE_CONVERSATION items"
         )
     

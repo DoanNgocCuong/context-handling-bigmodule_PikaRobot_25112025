@@ -14,6 +14,19 @@ from app.services.friendship_score_calculation_service import FriendshipScoreCal
 from app.services.friendship_status_update_service import FriendshipStatusUpdateService
 from app.services.conversation_event_processing_service import ConversationEventProcessingService
 from app.utils.logger_setup import get_logger
+from app.utils.color_log import success, error, warning, info, key_value
+from app.utils.color_worker import (
+    worker_connected,
+    worker_error,
+    queue_info,
+    message_received,
+    message_processed,
+    message_failed,
+    consumer_starting,
+    consumer_stopping,
+    consumer_stopped,
+    connection_closed,
+)
 
 logger = get_logger(__name__)
 
@@ -113,10 +126,14 @@ class RabbitMQConsumer:
                     queue=RabbitMQConfig.QUEUE_NAME,
                     passive=True  # Only check if queue exists, don't create
                 )
-                logger.info(f"✅ Queue '{RabbitMQConfig.QUEUE_NAME}' already exists")
+                logger.info(
+                    f"{success('✅')} {queue_info(RabbitMQConfig.QUEUE_NAME, 'already exists')}"
+                )
             except (pika.exceptions.ChannelClosedByBroker, pika.exceptions.ChannelClosed):
                 # Queue doesn't exist, create it (durable, no arguments to match existing)
-                logger.info(f"📝 Creating queue '{RabbitMQConfig.QUEUE_NAME}'")
+                logger.info(
+                    f"{info('📝')} {queue_info(RabbitMQConfig.QUEUE_NAME, 'creating')}"
+                )
                 # Reopen channel after error
                 if self.connection and not self.connection.is_closed:
                     self.channel = self.connection.channel()
@@ -133,11 +150,17 @@ class RabbitMQConsumer:
             self.channel.basic_qos(prefetch_count=1)
             
             logger.info(
-                f"✅ Connected to RabbitMQ as consumer at {RabbitMQConfig.get_host()}:{RabbitMQConfig.get_port()}"
+                worker_connected(
+                    f"Connected to RabbitMQ as consumer at "
+                    f"{RabbitMQConfig.get_host()}:{RabbitMQConfig.get_port()}"
+                )
             )
         
         except Exception as e:
-            logger.error(f"❌ Failed to connect to RabbitMQ: {str(e)}", exc_info=True)
+            logger.error(
+                worker_error(f"Failed to connect to RabbitMQ: {str(e)}"),
+                exc_info=True
+            )
             raise
     
     def callback(self, ch, method, properties, body):
@@ -158,7 +181,7 @@ class RabbitMQConsumer:
             message = json.loads(body)
             conversation_id = message.get("conversation_id")
             
-            logger.info(f"📥 Processing conversation from queue: {conversation_id}")
+            logger.info(message_received(conversation_id))
             
             # FIX: Tạo session MỚI cho mỗi message để tránh transaction bị "nhiễm" lỗi
             db = SessionLocal()
@@ -167,7 +190,10 @@ class RabbitMQConsumer:
             event = repo.get_by_conversation_id(conversation_id)
             
             if not event:
-                logger.error(f"❌ Conversation not found in DB: {conversation_id}")
+                logger.error(
+                    f"{error('❌ Conversation not found in DB')} | "
+                    f"{key_value('conversation_id', conversation_id)}"
+                )
                 ch.basic_ack(delivery_tag=method.delivery_tag)
                 return
             
@@ -191,24 +217,31 @@ class RabbitMQConsumer:
             result = processor.process_single_event(event.id)
             
             if result:
-                logger.info(
-                    f"✅ Successfully processed conversation: {conversation_id}, "
-                    f"processed={result.get('processed', 0)}"
-                )
+                processed = result.get('processed', 0)
+                failed = result.get('failed', 0)
+                logger.info(message_processed(conversation_id, processed, failed))
             else:
-                logger.warning(f"⚠️  No result from processing: {conversation_id}")
+                logger.warning(
+                    f"{warning('⚠️  No result from processing')} | "
+                    f"{key_value('conversation_id', conversation_id)}"
+                )
             
             # Acknowledge message
             ch.basic_ack(delivery_tag=method.delivery_tag)
         
         except json.JSONDecodeError as e:
-            logger.error(f"❌ Error parsing message JSON: {str(e)}", exc_info=True)
+            logger.error(
+                f"{error('❌ Error parsing message JSON')} | "
+                f"{key_value('error', str(e))}",
+                exc_info=True
+            )
             # Acknowledge message to remove from queue (invalid format)
             ch.basic_ack(delivery_tag=method.delivery_tag)
         
         except Exception as e:
+            error_msg = str(e)
             logger.error(
-                f"❌ Error processing message for conversation_id={conversation_id}: {str(e)}",
+                message_failed(conversation_id or 'unknown', error_msg),
                 exc_info=True
             )
             
@@ -242,21 +275,25 @@ class RabbitMQConsumer:
                 auto_ack=False  # Manual acknowledgment
             )
             
-            logger.info(f"🔄 Starting to consume messages from queue: {RabbitMQConfig.QUEUE_NAME}")
-            logger.info("Press CTRL+C to stop")
+            logger.info(consumer_starting())
+            logger.info(f"{info('📋')} {queue_info(RabbitMQConfig.QUEUE_NAME, 'listening')}")
+            logger.info(f"{info('💡')} Press CTRL+C to stop")
             
             self.channel.start_consuming()
         
         except KeyboardInterrupt:
-            logger.info("🛑 Stopping consumer...")
+            logger.info(consumer_stopping())
             if self.channel:
                 self.channel.stop_consuming()
             if self.connection and not self.connection.is_closed:
                 self.connection.close()
-            logger.info("✅ Consumer stopped")
+            logger.info(consumer_stopped())
         
         except Exception as e:
-            logger.error(f"❌ Error in consumer: {str(e)}", exc_info=True)
+            logger.error(
+                worker_error(f"Error in consumer: {str(e)}"),
+                exc_info=True
+            )
             raise
     
     def close(self):
@@ -266,9 +303,11 @@ class RabbitMQConsumer:
                 self.channel.stop_consuming()
             if self.connection and not self.connection.is_closed:
                 self.connection.close()
-            logger.info("🔌 Closed RabbitMQ consumer connection")
+            logger.info(connection_closed())
         except Exception as e:
-            logger.warning(f"Error closing RabbitMQ connection: {str(e)}")
+            logger.warning(
+                f"{warning('⚠️')} Error closing RabbitMQ connection: {str(e)}"
+            )
 
 
 def start_consumer():
@@ -277,7 +316,10 @@ def start_consumer():
     try:
         consumer.start_consuming()
     except Exception as e:
-        logger.error(f"❌ Consumer failed: {str(e)}", exc_info=True)
+        logger.error(
+            worker_error(f"Consumer failed: {str(e)}"),
+            exc_info=True
+        )
         raise
     finally:
         consumer.close()
