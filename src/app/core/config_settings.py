@@ -85,6 +85,9 @@ class Settings(BaseSettings):
     # Background Jobs
     CELERY_BROKER_URL: Optional[str] = "amqp://guest:guest@localhost:5672//"
     CELERY_RESULT_BACKEND: Optional[str] = "redis://localhost:6379/1"
+    
+    # Conversation Event Scheduler
+    CONVERSATION_EVENT_POLL_INTERVAL_HOURS: int = 6  # Chạy mỗi 6 giờ để xử lý conversation events
 
     model_config = SettingsConfigDict(
         # Load .env file directly via Pydantic (as backup to python-dotenv)

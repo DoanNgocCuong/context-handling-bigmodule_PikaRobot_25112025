@@ -1,5 +1,8 @@
 """
 APScheduler job setup for processing conversation events.
+
+Scheduler này chạy định kỳ để xử lý các conversation events có status PENDING hoặc FAILED.
+Mặc định chạy mỗi 6 giờ, có thể điều chỉnh qua env var CONVERSATION_EVENT_POLL_INTERVAL_HOURS.
 """
 from typing import Optional
 
@@ -7,6 +10,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
 from app.api.dependency_injection import get_friendship_score_calculation_service
+from app.core.config_settings import settings
 from app.db.database_connection import SessionLocal
 from app.services.conversation_event_processing_service import (
     ConversationEventProcessingService,
@@ -45,21 +49,31 @@ def _run_conversation_event_job() -> None:
 
 
 def start_background_jobs() -> None:
-    """Start APScheduler with the conversation-event job."""
+    """
+    Khởi động APScheduler với job xử lý conversation events.
+    
+    Job này sẽ chạy định kỳ theo interval được cấu hình trong settings
+    (mặc định mỗi 6 giờ) để xử lý các conversation events có status PENDING hoặc FAILED.
+    """
     global _scheduler
     if _scheduler and _scheduler.running:
         return
 
+    interval_hours = settings.CONVERSATION_EVENT_POLL_INTERVAL_HOURS
+    
     _scheduler = AsyncIOScheduler()
     _scheduler.add_job(
         _run_conversation_event_job,
-        trigger=IntervalTrigger(seconds=10),
+        trigger=IntervalTrigger(hours=interval_hours),
         id=JOB_ID_CONVERSATION_EVENTS,
         replace_existing=True,
         max_instances=1,
     )
     _scheduler.start()
-    logger.info("Background scheduler started (conversation events every 10 seconds)")
+    logger.info(
+        "Background scheduler started (conversation events every %s hours)",
+        interval_hours
+    )
 
 
 def shutdown_background_jobs() -> None:
