@@ -16,8 +16,7 @@ from typing import Dict, List, Any, Optional, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import httpx
 from groq import Groq
-from langfuse import Langfuse
-from langfuse.decorators import observe
+from langfuse import Langfuse, observe
 from app.core.config_settings import settings
 from app.utils.logger_setup import get_logger
 from app.core.exceptions_custom import InvalidScoreError

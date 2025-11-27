@@ -1,7 +1,7 @@
 ```
 # 1. Install dependencies
 cd src
-pip install -r requirements.txt
+pip install -e .
 
 # 2. Setup environment (optional)
 cp .env.example .env

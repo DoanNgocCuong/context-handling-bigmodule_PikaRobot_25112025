@@ -22,19 +22,18 @@ RUN pip install --upgrade pip setuptools wheel && \
     poetry config virtualenvs.create false && \
     poetry install --no-interaction --no-ansi --no-root
 
+# Install additional dependencies if needed
+RUN pip install --no-cache-dir google-generativeai || true
+
 # Copy application code
 COPY . .
+# Project package không cần cài vì PYTHONPATH=/app đã đủ để import
+# Nếu cần cài, dùng: pip install -e .
 
 # Create logs directory
 RUN mkdir -p /app/logs
 
-# Expose port
-EXPOSE 30020
+ENV PYTHONPATH=/app
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:30020/v1/health')"
-
-# Run application
-CMD ["uvicorn", "app.main_app:app", "--host", "0.0.0.0", "--port", "30020", "--reload"]
-
+# Run worker
+CMD ["python", "worker.py"]

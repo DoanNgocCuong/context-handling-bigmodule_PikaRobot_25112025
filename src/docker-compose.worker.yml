@@ -1,0 +1,27 @@
+name: context-handling-worker
+
+services:
+  worker:
+    build:
+      context: .
+      dockerfile: ./Dockerfile.worker
+    image: v1-context-handling-worker:latest
+    container_name: context-handling-worker
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - context_handling_network
+    environment:
+      LOGGING_LEVEL: INFO
+    deploy:
+      replicas: 1
+
+networks:
+  context_handling_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.6.0.0/24
+          gateway: 10.6.0.1
