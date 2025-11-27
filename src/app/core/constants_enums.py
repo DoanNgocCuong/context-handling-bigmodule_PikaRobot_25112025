@@ -13,6 +13,7 @@ class FriendshipLevel(str, Enum):
 
 class AgentType(str, Enum):
     """Agent type enumeration."""
+    DEFAULT = ""
     GREETING = "GREETING"
     TALK = "TALK"
     GAME_ACTIVITY = "GAME_ACTIVITY"

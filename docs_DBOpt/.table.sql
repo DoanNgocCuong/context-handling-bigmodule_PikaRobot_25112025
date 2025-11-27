@@ -100,8 +100,7 @@ CREATE TABLE conversation_events (
     user_id VARCHAR(255) NOT NULL,
     
     -- Bot Information
-    bot_type VARCHAR(50) NOT NULL 
-        CHECK (bot_type IN ('GREETING', 'TALK', 'GAME_ACTIVITY')),
+    bot_type VARCHAR(50) NOT NULL,
     bot_id VARCHAR(255) NOT NULL,
     bot_name VARCHAR(255) NOT NULL,
     
