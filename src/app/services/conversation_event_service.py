@@ -26,6 +26,10 @@ from app.services.friendship_score_calculation_service import (
 )
 from app.services.friendship_status_update_service import FriendshipStatusUpdateService
 from app.utils.logger_setup import get_logger
+from app.utils.conversation_log_transform import (
+    transform_conversation_logs,
+    is_api_format,
+)
 
 logger = get_logger(__name__)
 
@@ -56,7 +60,31 @@ class ConversationEventService:
 
         payload = request.model_dump(mode="json")
         payload.pop("duration_seconds", None)
-        payload["conversation_log"] = payload.get("conversation_log") or []
+        
+        # Transform conversation_logs if in API format
+        raw_logs = payload.get("conversation_log") or []
+        
+        # Store raw data before transformation
+        if raw_logs and is_api_format(raw_logs):
+            logger.info(
+                f"Detected API format conversation_logs, transforming to standardized format "
+                f"for conversation_id={request.conversation_id}"
+            )
+            # Save raw format to raw_conversation_log
+            payload["raw_conversation_log"] = raw_logs
+            # Transform to standardized format
+            payload["conversation_log"] = transform_conversation_logs(
+                conversation_logs=raw_logs,
+                start_time=request.start_time,
+                end_time=request.end_time,
+            )
+        else:
+            # If already in standard format, keep as-is
+            payload["conversation_log"] = raw_logs
+            # If raw_conversation_log was provided, use it; otherwise set to None
+            if "raw_conversation_log" not in payload:
+                payload["raw_conversation_log"] = None
+        
         payload["status"] = payload.get("status") or ConversationEventStatus.PENDING.value
         payload["next_attempt_at"] = payload.get("next_attempt_at") or (
             datetime.now(timezone.utc) + timedelta(hours=CONVERSATION_EVENT_RETRY_HOURS)
@@ -113,6 +141,7 @@ class ConversationEventService:
             "end_time": event.end_time,
             "duration_seconds": event.duration_seconds,
             "conversation_log": event.conversation_log or [],
+            "raw_conversation_log": event.raw_conversation_log,
             "status": event.status,
             "attempt_count": event.attempt_count,
             "created_at": event.created_at,

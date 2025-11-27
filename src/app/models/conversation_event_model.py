@@ -49,6 +49,7 @@ class ConversationEvent(Base):
         nullable=False,
     )
     conversation_log = Column(JSONB, nullable=False, default=list)
+    raw_conversation_log = Column(JSONB, nullable=True, default=None)
     status = Column(String(50), nullable=False, default=ConversationEventStatus.PENDING.value)
     attempt_count = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

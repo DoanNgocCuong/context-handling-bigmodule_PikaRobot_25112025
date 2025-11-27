@@ -113,6 +113,7 @@ CREATE TABLE conversation_events (
     
     -- Conversation Data
     conversation_log JSONB NOT NULL DEFAULT '[]',
+    raw_conversation_log JSONB NULL DEFAULT '[]',
     
     -- Status tracking
     status VARCHAR(50) NOT NULL DEFAULT 'PENDING'
@@ -151,3 +152,5 @@ CREATE INDEX idx_conversation_events_status_next_attempt
 -- GIN index for JSONB queries
 CREATE INDEX idx_conversation_events_log_gin 
     ON conversation_events USING GIN (conversation_log);
+CREATE INDEX idx_conversation_events_raw_log_gin 
+    ON conversation_events USING GIN (raw_conversation_log);

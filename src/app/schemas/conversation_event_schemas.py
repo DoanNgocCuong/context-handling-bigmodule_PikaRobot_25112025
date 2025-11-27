@@ -23,8 +23,12 @@ class ConversationEventCreateRequest(BaseModel):
     end_time: datetime = Field(..., description="Conversation end timestamp")
     conversation_log: List[Dict[str, Any]] = Field(
         default_factory=list,
-        description="Raw JSON conversation payload; stored as-is",
+        description="Standardized conversation log (transformed from raw format)",
         validation_alias=AliasChoices("conversation_log", "conversation_logs"),
+    )
+    raw_conversation_log: Optional[List[Dict[str, Any]]] = Field(
+        default=None,
+        description="Raw conversation log in original API format (before transformation)",
     )
     status: ConversationEventStatus = Field(default=ConversationEventStatus.PENDING, description="Initial processing status")
     attempt_count: int = Field(default=0, ge=0, description="Number of processing attempts")
@@ -78,6 +82,7 @@ class ConversationEventData(BaseModel):
     end_time: datetime
     duration_seconds: int
     conversation_log: List[Dict[str, Any]]
+    raw_conversation_log: Optional[List[Dict[str, Any]]]
     status: ConversationEventStatus
     attempt_count: int
     created_at: datetime
@@ -118,6 +123,12 @@ class ConversationEventCreateResponse(BaseModel):
                             "turn_id": 1,
                             "text": "Hello! Ready to talk about movies?",
                             "timestamp": "2025-11-26T10:00:00Z"
+                        }
+                    ],
+                    "raw_conversation_log": [
+                        {
+                            "character": "BOT_RESPONSE_CONVERSATION",
+                            "content": "Hello! Ready to talk about movies?"
                         }
                     ],
                     "status": "PENDING",
