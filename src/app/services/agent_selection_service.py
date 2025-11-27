@@ -305,7 +305,8 @@ class AgentSelectionService:
         """
         status = self.status_repo.get_by_user_id(user_id)
         if not status:
-            raise FriendshipNotFoundError(f"Friendship status not found for user {user_id}")
+            logger.info("Friendship status missing for %s, creating default", user_id)
+            status = self.status_repo.create_default(user_id)
 
         level = self.determine_level(status.friendship_score or 0.0)
 
@@ -344,13 +345,12 @@ class AgentSelectionService:
 
     def _build_final_prompt(self, *, persona, talking_agenda: Optional[str]) -> Optional[str]:
         blocks: List[str] = []
-        if persona:
-            if persona.context_style_guideline:
-                blocks.append(persona.context_style_guideline.strip())
-            if persona.user_profile:
-                blocks.append(persona.user_profile.strip())
+        if persona and persona.context_style_guideline:
+            blocks.append(persona.context_style_guideline.strip())
         if talking_agenda:
             blocks.append(talking_agenda.strip())
+        if persona and persona.user_profile:
+            blocks.append(persona.user_profile.strip())
         final_prompt = "\n\n".join(blocks).strip()
         return final_prompt or None
 
