@@ -1,5 +1,5 @@
 -- GREETING: greeting_welcome
-INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, prompt_final)
+INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, final_prompt)
 VALUES (
     'greeting_welcome',
     'Welcome Greeting',
@@ -22,7 +22,7 @@ Avoid teaching content here, just say hello and show excitement to meet them.$$,
 );
 
 -- GREETING: greeting_memory_recall
-INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, prompt_final)
+INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, final_prompt)
 VALUES (
     'greeting_memory_recall',
     'Memory Recall Greeting',
@@ -48,7 +48,7 @@ Create a greeting that:
 );
 
 -- TALK: talk_hobbies
-INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, prompt_final)
+INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, final_prompt)
 VALUES (
     'talk_hobbies',
     'Hobbies Talk',
@@ -74,7 +74,7 @@ Use simple English at level {{user_level}} and short sentences.$$,
 );
 
 -- TALK: talk_movie_preference
-INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, prompt_final)
+INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, final_prompt)
 VALUES (
     'talk_movie_preference',
     'Movie Preference Talk',
@@ -101,7 +101,7 @@ Keep it fun and light, CEFR level {{user_level}}.$$,
 );
 
 -- GAME: game_drawing
-INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, prompt_final)
+INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, final_prompt)
 VALUES (
     'game_drawing',
     'Drawing Game',
@@ -127,7 +127,7 @@ In 2–3 short sentences:
 );
 
 -- GAME: game_adventure
-INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, prompt_final)
+INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, final_prompt)
 VALUES (
     'game_adventure',
     'Adventure Quest',

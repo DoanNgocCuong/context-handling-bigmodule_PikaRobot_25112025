@@ -972,7 +972,7 @@ CREATE TABLE agent_prompting (
 
   
 
-    prompt_final TEXT,
+    final_prompt TEXT,
 
     -- Prompt đã compile / cache sẵn (optional, có thể null)
 
@@ -999,7 +999,7 @@ ON agent_prompting(agent_id);
 
 -- GREETING: greeting_welcome
 
-INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, prompt_final)
+INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, final_prompt)
 
 VALUES (
 
@@ -1045,7 +1045,7 @@ Avoid teaching content here, just say hello and show excitement to meet them.$$,
 
 -- GREETING: greeting_memory_recall
 
-INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, prompt_final)
+INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, final_prompt)
 
 VALUES (
 
@@ -1097,7 +1097,7 @@ Create a greeting that:
 
 -- TALK: talk_hobbies
 
-INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, prompt_final)
+INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, final_prompt)
 
 VALUES (
 
@@ -1149,7 +1149,7 @@ Use simple English at level {{user_level}} and short sentences.$$,
 
 -- TALK: talk_movie_preference
 
-INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, prompt_final)
+INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, final_prompt)
 
 VALUES (
 
@@ -1203,7 +1203,7 @@ Keep it fun and light, CEFR level {{user_level}}.$$,
 
 -- GAME: game_drawing
 
-INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, prompt_final)
+INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, final_prompt)
 
 VALUES (
 
@@ -1255,7 +1255,7 @@ In 2–3 short sentences:
 
 -- GAME: game_adventure
 
-INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, prompt_final)
+INSERT INTO agent_prompting (agent_id, agent_name, goal, prompt_template, final_prompt)
 
 VALUES (
 
@@ -2408,88 +2408,108 @@ curl -X POST http://localhost:8000/v1/activities/suggest \
 
 ```json
 {
-  "user_id": "user_123",
-  "friendship_level": "ACQUAINTANCE",
-  "computed_at": "2025-11-25T18:30:00Z",
-  "greeting_agent": {
-    "id": 8,
+  "success": true,
+  "data": {
+    "user_id": "user_123",
     "friendship_level": "ACQUAINTANCE",
-    "agent_type": "GREETING",
-    "agent_id": "greeting_memory_recall",
-    "agent_name": "Memory Recall",
-    "agent_description": "Nhắc lại ký ức chung với user",
-    "weight": 2.0,
-    "is_active": true,
-    "reason": "High affinity with past memories"
+    "greeting_agent": {
+      "agent_id": "greeting_memory_recall",
+      "agent_name": "Memory Recall",
+      "agent_type": "GREETING",
+      "agent_description": "Nhắc lại ký ức chung với user",
+      "final_prompt": "You are Pika, a buddy who REMEMBERS shared memories with the child.\n\nGoal:\n- Start the session by recalling a recent shared memory\n- Make the child feel \"Wow, Pika remembers me!\"\n- Keep it light and positive\n\nContext:\n- user_name: {{user_name}}\n- last_memory_content: {{last_memory_content}}\n- last_interaction_days_ago: {{last_interaction_days_ago}}\n\nInstruction:\nCreate a greeting that:\n1) Says hello to the user by name.\n2) Briefly recalls {{last_memory_content}} in a natural way.\n3) Adds one motivating sentence to start today's session.",
+      "reason": "High streak - Streak >= 5 days"
+    },
+    "talk_agents": [
+      {
+        "agent_id": "talk_movie_preference",
+        "agent_name": "Movie Preference",
+        "agent_type": "TALK",
+        "agent_description": "Nói về phim yêu thích",
+        "final_prompt": "You are Pika, talking with a child about movies they like.\n\nGoal:\n- Let the child share their favorite movies or characters\n- Ask 1–3 short questions\n- Optionally connect to a previous memory about movies\n\nContext:\n- user_name: {{user_name}}\n- last_movie_memory: {{last_movie_memory}}\n- user_level: {{user_level}}\n\nInstruction:\nCreate a short dialogue turn:\n- Start with 1 friendly sentence.\n- If last_movie_memory exists, mention it briefly (\"Last time you told me about ...\").\n- Ask 1–2 simple questions about movies or characters the child likes.\nKeep it fun and light, CEFR level {{user_level}}.",
+        "reason": "Topic preference",
+        "metadata": {
+          "topic_score": 59.0,
+          "total_turns": 12,
+          "selection_score": 45.5
+        }
+      },
+      {
+        "agent_id": "talk_dreams",
+        "agent_name": "Dreams Talk",
+        "agent_type": "TALK",
+        "agent_description": "Nói về ước mơ",
+        "final_prompt": null,
+        "reason": "Exploration candidate",
+        "metadata": {
+          "topic_score": 8.5,
+          "total_turns": 2,
+          "selection_score": 28.5
+        }
+      }
+    ],
+    "game_agents": [
+      {
+        "agent_id": "game_20questions",
+        "agent_name": "20 Questions",
+        "agent_type": "GAME_ACTIVITY",
+        "agent_description": "Trò chơi 20 câu hỏi",
+        "final_prompt": null,
+        "reason": "Weighted random selection"
+      },
+      {
+        "agent_id": "game_story_building",
+        "agent_name": "Story Building",
+        "agent_type": "GAME_ACTIVITY",
+        "agent_description": "Xây dựng câu chuyện chung",
+        "final_prompt": null,
+        "reason": "Weighted random selection"
+      }
+    ]
   },
-  "talk_agents": [
-    {
-      "id": 10,
-      "friendship_level": "ACQUAINTANCE",
-      "agent_type": "TALK",
-      "agent_id": "talk_movie_preference",
-      "agent_name": "Movie Preference",
-      "agent_description": "Nói về phim yêu thích",
-      "weight": 1.2,
-      "is_active": true,
-      "reason": "Highest topic_score (59.0)",
-      "topic_score": 59.0,
-      "total_turns": 12
-    },
-    {
-      "id": 11,
-      "friendship_level": "ACQUAINTANCE",
-      "agent_type": "TALK",
-      "agent_id": "talk_dreams",
-      "agent_name": "Dreams Talk",
-      "agent_description": "Nói về ước mơ",
-      "weight": 1.0,
-      "is_active": true,
-      "reason": "Exploration candidate - low interaction",
-      "topic_score": 8.5,
-      "total_turns": 2
-    }
-  ],
-  "game_agents": [
-    {
-      "id": 12,
-      "friendship_level": "ACQUAINTANCE",
-      "agent_type": "GAME_ACTIVITY",
-      "agent_id": "game_20questions",
-      "agent_name": "20 Questions",
-      "agent_description": "Trò chơi 20 câu hỏi",
-      "weight": 1.0,
-      "is_active": true,
-      "reason": "Engagement booster"
-    },
-    {
-      "id": 13,
-      "friendship_level": "ACQUAINTANCE",
-      "agent_type": "GAME_ACTIVITY",
-      "agent_id": "game_story_building",
-      "agent_name": "Story Building",
-      "agent_description": "Xây dựng câu chuyện chung",
-      "weight": 1.5,
-      "is_active": true,
-      "reason": "Creative engagement"
-    }
-  ]
+  "message": "Activities suggested successfully"
 }
 ```
 
 #### Response Fields
 
-| Field                | Type     | Description                         |
-| :------------------- | :------- | :---------------------------------- |
-| `user_id`          | String   | ID của user                        |
-| `friendship_level` | String   | STRANGER / ACQUAINTANCE / FRIEND    |
-| `computed_at`      | DateTime | Thời điểm tính toán candidates |
-| `greeting_agent`   | Object   | 1 greeting agent được chọn      |
-| `talk_agents`      | Array    | Danh sách talk agents (2-3 cái)   |
-| `game_agents`      | Array    | Danh sách game agents (1-2 cái)   |
-| `reason`           | String   | Lý do chọn agent này             |
-| `topic_score`      | Float    | Điểm topic (nếu có)             |
-| `total_turns`      | Integer  | Số lượt tương tác (nếu có)  |
+**Top-level fields:**
+
+| Field                | Type     | Description                                    |
+| :------------------- | :------- | :--------------------------------------------- |
+| `success`          | Boolean  | Trạng thái thành công (true/false)            |
+| `data`             | Object   | Payload chứa danh sách agents được suggest   |
+| `message`          | String   | Thông báo response                             |
+
+**Fields trong `data` object:**
+
+| Field                | Type     | Description                                    |
+| :------------------- | :------- | :--------------------------------------------- |
+| `user_id`          | String   | ID của user                                   |
+| `friendship_level` | String   | STRANGER / ACQUAINTANCE / FRIEND              |
+| `greeting_agent`   | Object   | 1 greeting agent được chọn (xem chi tiết bên dưới) |
+| `talk_agents`      | Array    | Danh sách talk agents (thường 2 agents)      |
+| `game_agents`      | Array    | Danh sách game agents (thường 2 agents)      |
+
+**Fields trong mỗi agent object (greeting_agent, talk_agents[], game_agents[]):**
+
+| Field                | Type     | Required | Description                                    |
+| :------------------- | :------- | :------- | :--------------------------------------------- |
+| `agent_id`         | String   | Yes      | ID duy nhất của agent                        |
+| `agent_name`       | String   | Yes      | Tên hiển thị của agent                       |
+| `agent_type`       | String   | Yes      | Loại agent: GREETING, TALK, GAME_ACTIVITY    |
+| `agent_description` | String   | No       | Mô tả agent từ bảng friendship_agent_mapping (có thể null) |
+| `final_prompt`     | String   | No       | Final prompt từ bảng agent_prompting (có thể null nếu chưa có) |
+| `reason`           | String   | No       | Lý do agent này được chọn                     |
+| `metadata`         | Object   | No       | Metadata bổ sung (chỉ có trong talk_agents)   |
+
+**Fields trong `metadata` object (chỉ có trong talk_agents):**
+
+| Field                | Type     | Description                                    |
+| :------------------- | :------- | :--------------------------------------------- |
+| `topic_score`      | Float    | Điểm topic của agent (từ topic_metrics)      |
+| `total_turns`      | Integer  | Tổng số lượt tương tác với topic này         |
+| `selection_score`  | Float    | Điểm selection được tính toán (topic_score * 0.7 + exploration * 0.3) |
 
 ---
 

@@ -76,7 +76,7 @@ CREATE TABLE agent_prompting (
     prompt_template TEXT NOT NULL,
     -- Prompt "thô" có placeholder, ví dụ: {{user_name}}, {{topic}}
 
-    prompt_final TEXT,
+    final_prompt TEXT,
     -- Prompt đã compile / cache sẵn (optional, có thể null)
 
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,

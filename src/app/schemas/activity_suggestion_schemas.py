@@ -1,17 +1,31 @@
 """
-Schemas for activity suggestion API.
+Schemas cho API suggest activities.
+
+Schemas này định nghĩa cấu trúc request/response cho API suggest activities,
+bao gồm thông tin chi tiết về các agents được suggest cho user.
 """
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 
 
 class AgentDetail(BaseModel):
-    """Detail information for a selected agent."""
-    agent_id: str = Field(..., description="Unique agent identifier")
-    agent_name: str = Field(..., description="Display name of agent")
-    agent_type: str = Field(..., description="Type: GREETING, TALK, GAME_ACTIVITY")
-    reason: Optional[str] = Field(None, description="Why this agent was selected")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional info (topic score, etc.)")
+    """
+    Schema cho thông tin chi tiết của một agent được suggest.
+    
+    AgentDetail chứa đầy đủ thông tin về agent bao gồm:
+    - Thông tin cơ bản: agent_id, agent_name, agent_type
+    - Thông tin mô tả: agent_description (từ friendship_agent_mapping)
+    - Thông tin prompt: final_prompt (từ agent_prompting, có thể None)
+    - Lý do chọn: reason
+    - Metadata bổ sung: metadata (topic_score, total_turns, etc.)
+    """
+    agent_id: str = Field(..., description="ID duy nhất của agent")
+    agent_name: str = Field(..., description="Tên hiển thị của agent")
+    agent_type: str = Field(..., description="Loại agent: GREETING, TALK, GAME_ACTIVITY")
+    agent_description: Optional[str] = Field(None, description="Mô tả agent từ bảng friendship_agent_mapping")
+    final_prompt: Optional[str] = Field(None, description="Final prompt từ bảng agent_prompting (có thể None nếu chưa có)")
+    reason: Optional[str] = Field(None, description="Lý do agent này được chọn")
+    metadata: Optional[Dict[str, Any]] = Field(None, description="Metadata bổ sung (topic_score, total_turns, selection_score, etc.)")
 
 
 class ActivitySuggestionData(BaseModel):
@@ -31,6 +45,8 @@ class ActivitySuggestionData(BaseModel):
                     "agent_id": "greeting_memory_recall",
                     "agent_name": "Memory Recall Greeting",
                     "agent_type": "GREETING",
+                    "agent_description": "Nhắc lại ký ức chung với user",
+                    "final_prompt": "You are Pika, a buddy who REMEMBERS...",
                     "reason": "Streak >= 5 days, recalling shared memory"
                 },
                 "talk_agents": [
@@ -38,10 +54,13 @@ class ActivitySuggestionData(BaseModel):
                         "agent_id": "talk_movie_preference",
                         "agent_name": "Movie Talk",
                         "agent_type": "TALK",
+                        "agent_description": "Nói về phim yêu thích",
+                        "final_prompt": "You are Pika, talking with a child about movies...",
                         "reason": "High topic score",
                         "metadata": {
                             "topic_score": 52.0,
-                            "total_turns": 65
+                            "total_turns": 65,
+                            "selection_score": 45.5
                         }
                     },
                     {
