@@ -3,6 +3,54 @@ Friendship Score Calculation Service.
 
 This service calculates friendship score changes from conversation data.
 Follows Single Responsibility Principle (SRP).
+
+================================================================================
+SCORING FORMULA - Daily Change Score Calculation
+================================================================================
+
+The daily_change_score is calculated using the following formula:
+
+    daily_change_score = base_score + engagement_bonus + emotion_bonus + memory_bonus
+
+Where:
+
+1. BASE SCORE:
+   base_score = total_turns * 1
+   - total_turns: Number of complete conversation turns (1 turn = 1 pair: pika + user)
+
+2. ENGAGEMENT BONUS:
+   engagement_bonus = user_initiated_questions * 3
+   - user_initiated_questions: Count of questions the user actively asked (from LLM analysis)
+
+3. EMOTION BONUS:
+   emotion_bonus = mapping based on session_emotion:
+   - If session_emotion == 'interesting': emotion_bonus = +15
+   - If session_emotion == 'boring': emotion_bonus = -15
+   - All other emotions: emotion_bonus = 0
+   - session_emotion: Overall emotion of the conversation session (from LLM analysis)
+
+4. MEMORY BONUS:
+   memory_bonus = new_memories_count * 5
+   - new_memories_count: Number of new memories extracted from conversation (from Memory API)
+
+================================================================================
+EXAMPLE CALCULATION
+================================================================================
+
+Given:
+- total_turns = 3
+- user_initiated_questions = 1
+- session_emotion = 'interesting'
+- new_memories_count = 7
+
+Calculation:
+- base_score = 3 * 1 = 3.0
+- engagement_bonus = 1 * 3 = 3.0
+- emotion_bonus = 15.0 (interesting)
+- memory_bonus = 7 * 5 = 35.0
+- daily_change_score = 3.0 + 3.0 + 15.0 + 35.0 = 56.0
+
+================================================================================
 """
 from typing import Dict, List, Any, Optional
 from app.utils.logger_setup import get_logger
@@ -26,18 +74,21 @@ class FriendshipScoreCalculationService:
     """
     
     # Score calculation constants (following Open/Closed Principle)
-    BASE_SCORE_PER_TURN: float = 0.5
-    ENGAGEMENT_BONUS_PER_QUESTION: float = 3.0
-    MEMORY_BONUS_PER_MEMORY: float = 5.0
+    # Formula: daily_change_score = base_score + engagement_bonus + emotion_bonus + memory_bonus
+    BASE_SCORE_PER_TURN: float = 1.0  # base_score = total_turns * 1
+    ENGAGEMENT_BONUS_PER_QUESTION: float = 3.0  # engagement_bonus = user_initiated_questions * 3
+    MEMORY_BONUS_PER_MEMORY: float = 5.0  # memory_bonus = new_memories_count * 5
     
     # Emotion bonus mapping
+    # interesting: +15, boring: -15, others: 0
     EMOTION_BONUS_MAP: Dict[str, float] = {
         "interesting": 15.0,
         "boring": -15.0,
-        "happy": 10.0,
-        "sad": -5.0,
+        # Other emotions default to 0.0 (handled by .get(emotion.lower(), 0.0))
+        "happy": 0.0,
+        "sad": 0.0,
         "neutral": 0.0,
-        "angry": -10.0
+        "angry": 0.0
     }
     
     def __init__(self, conversation_fetch_service=None):
@@ -97,16 +148,16 @@ class FriendshipScoreCalculationService:
             if "user_id" not in metadata:
                 metadata["user_id"] = conversation_data.get("user_id")
             
-            # Step 3: Calculate score change
-            score_change = self.calculate_friendship_score_change(
+            # Step 3: Calculate score change (this will update metadata with LLM results)
+            score_change, updated_metadata = self.calculate_friendship_score_change(
                 conversation_log=conversation_log,
                 metadata=metadata
             )
             
-            # Step 4: Get calculation breakdown for transparency
+            # Step 4: Get calculation breakdown using updated metadata (with LLM results)
             calculation_details = self._get_calculation_breakdown(
                 conversation_log=conversation_log,
-                metadata=metadata
+                metadata=updated_metadata
             )
             
             result = {
@@ -138,7 +189,7 @@ class FriendshipScoreCalculationService:
         self,
         conversation_log: List[Dict[str, Any]],
         metadata: Dict[str, Any]
-    ) -> float:
+    ) -> tuple[float, Dict[str, Any]]:
         """
         Calculate friendship score change from conversation log and metadata.
         
@@ -154,7 +205,9 @@ class FriendshipScoreCalculationService:
             metadata: Conversation metadata (emotion, user_initiated_questions, etc.)
             
         Returns:
-            Friendship score change (always >= 0)
+            Tuple of (friendship_score_change, updated_metadata)
+            - friendship_score_change: Friendship score change (always >= 0)
+            - updated_metadata: Metadata with LLM analysis results merged
         """
         try:
             # Extract metrics
@@ -242,11 +295,13 @@ class FriendshipScoreCalculationService:
                     f"{key_value('memories', str(new_memories_count))}"
                 )
             
-            return final_score
+            # Return both score and updated metadata (with LLM results)
+            return final_score, metadata
             
         except Exception as e:
             logger.error(f"Error in score calculation: {str(e)}")
-            raise InvalidScoreError(f"Score calculation failed: {str(e)}") from e
+            # Return 0.0 and original metadata on error
+            return 0.0, metadata
     
     def _calculate_base_score(self, total_turns: int) -> float:
         """Calculate base score from total turns."""
@@ -418,20 +473,16 @@ class FriendshipScoreCalculationService:
         emotion_bonus = self._calculate_emotion_bonus(session_emotion)
         memory_bonus = self._calculate_memory_bonus(new_memories_count)
         
-        total_score = base_score + engagement_bonus + emotion_bonus + memory_bonus
-        final_score = max(0.0, total_score)
+        total_exchange_score = base_score + engagement_bonus + emotion_bonus + memory_bonus
+        # Ensure non-negative
+        total_exchange_score = max(0.0, total_exchange_score)
         
         return {
             "total_turns": total_turns,
-            "user_initiated_questions": user_initiated_questions,
             "session_emotion": session_emotion,
+            "user_initiated_questions": user_initiated_questions,
             "new_memories_count": new_memories_count,
-            "base_score": base_score,
-            "engagement_bonus": engagement_bonus,
-            "emotion_bonus": emotion_bonus,
-            "memory_bonus": memory_bonus,
-            "total_score_before_clamp": total_score,
-            "final_score_change": final_score
+            "total_exchange_score": total_exchange_score
         }
 
 

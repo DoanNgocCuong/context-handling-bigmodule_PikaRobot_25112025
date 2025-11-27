@@ -110,6 +110,7 @@ class Settings(BaseSettings):
     # Memory API Configuration (Mem0)
     MEMORY_API_URL: Optional[str] = None
     MEMORY_API_ENABLED: bool = True
+    MEMORY_API_TIMEOUT_SECONDS: int = 600  # Timeout for Memory API calls (default: 60 seconds)
 
     model_config = SettingsConfigDict(
         # Load .env file directly via Pydantic (as backup to python-dotenv)

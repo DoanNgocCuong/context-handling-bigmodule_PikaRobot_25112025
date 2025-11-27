@@ -484,18 +484,48 @@ def extract_memories_from_api(
             f"{json.dumps(payload, ensure_ascii=False, indent=2)}"
         )
         
-        # Call Memory API
-        with httpx.Client(timeout=30.0) as client:
-            response = client.post(
-                f"{settings.MEMORY_API_URL}/extract_facts",
-                headers={
-                    "accept": "application/json",
-                    "Content-Type": "application/json"
-                },
-                json=payload
+        # Call Memory API with configurable timeout
+        timeout_seconds = settings.MEMORY_API_TIMEOUT_SECONDS or 60
+        api_url = f"{settings.MEMORY_API_URL}/extract_facts"
+        
+        logger.info(
+            f"⏱️  Calling Memory API | "
+            f"url={api_url} | "
+            f"timeout={timeout_seconds}s | "
+            f"conversation_id={conversation_id} | "
+            f"conversation_messages={len(formatted_conversation)}"
+        )
+        
+        import time
+        start_time = time.time()
+        
+        try:
+            with httpx.Client(timeout=timeout_seconds) as client:
+                response = client.post(
+                    api_url,
+                    headers={
+                        "accept": "application/json",
+                        "Content-Type": "application/json"
+                    },
+                    json=payload
+                )
+                elapsed_time = time.time() - start_time
+                logger.info(
+                    f"⏱️  Memory API response received | "
+                    f"status_code={response.status_code} | "
+                    f"elapsed_time={elapsed_time:.2f}s"
+                )
+                response.raise_for_status()
+                result = response.json()
+        except httpx.TimeoutException as e:
+            elapsed_time = time.time() - start_time
+            logger.error(
+                f"❌ Memory API timeout after {elapsed_time:.2f}s | "
+                f"timeout_setting={timeout_seconds}s | "
+                f"url={api_url} | "
+                f"conversation_id={conversation_id}"
             )
-            response.raise_for_status()
-            result = response.json()
+            raise
         
         # Log full response for debugging
         logger.info(
