@@ -15,7 +15,7 @@ services:
     environment:
       LOGGING_LEVEL: INFO
     deploy:
-      replicas: 1
+      replicas: ${WORKER_REPLICAS:-10}  # 10 worker processes để xử lý song song (mặc định 10)
 
 networks:
   context_handling_network:

@@ -67,6 +67,9 @@ class Settings(BaseSettings):
     RABBITMQ_EXCHANGE_NAME: str = "conversation_exchange"
     RABBITMQ_ROUTING_KEY: str = "conversation.end"
 
+    # Worker Configuration
+    MESSAGE_CONCURRENCY_PER_WORKER: int = 10  # Số message xử lý song song trong 1 worker
+
     # Application
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
