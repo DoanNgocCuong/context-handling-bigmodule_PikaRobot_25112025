@@ -84,7 +84,7 @@ class ConversationEventProcessingService:
                 
                 # Get topic_id from DB (agenda_agent_prompting table) using agent_tag
                 topic_id = get_topic_id_from_agent_id(
-                    bot_id=agent_tag,  # Use agent_tag to query topic_id
+                    agent_tag=agent_tag,  # Use agent_tag to query topic_id
                     friendship_level=friendship_level,
                     db=self.db
                 )
@@ -248,7 +248,7 @@ class ConversationEventProcessingService:
                     
                     # Get topic_id from DB (agenda_agent_prompting table) using agent_tag
                     topic_id = get_topic_id_from_agent_id(
-                        bot_id=agent_tag,  # Use agent_tag to query topic_id
+                        agent_tag=agent_tag,  # Use agent_tag to query topic_id
                         friendship_level=friendship_level,
                         db=self.db
                     )

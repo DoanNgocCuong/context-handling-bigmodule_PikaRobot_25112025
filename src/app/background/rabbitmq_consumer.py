@@ -4,11 +4,8 @@ RabbitMQ Consumer for conversation events.
 Consumes messages from RabbitMQ queue and processes conversation events.
 """
 import json
-import time
 import pika
 from typing import Optional
-from concurrent.futures import ThreadPoolExecutor
-from threading import Lock
 from app.core.config_settings import settings
 from app.db.database_connection import SessionLocal
 from app.repositories.conversation_event_repository import ConversationEventRepository
@@ -93,27 +90,14 @@ class RabbitMQConfig:
         return "guest"
     
     QUEUE_NAME = settings.RABBITMQ_QUEUE_NAME
-    # Đọc từ settings: số message xử lý song song trong 1 worker
-    MESSAGE_CONCURRENCY_PER_WORKER = settings.MESSAGE_CONCURRENCY_PER_WORKER
 
 
 class RabbitMQConsumer:
     """RabbitMQ consumer for conversation events."""
     
-    def __init__(self, max_workers: int = None):
-        """
-        Initialize RabbitMQ consumer with thread pool for concurrent processing.
-        
-        Args:
-            max_workers: Number of threads in thread pool. Defaults to MESSAGE_CONCURRENCY_PER_WORKER.
-        """
+    def __init__(self):
         self.connection: Optional[pika.BlockingConnection] = None
         self.channel: Optional[pika.channel.Channel] = None
-        # Thread pool để xử lý messages song song
-        workers = max_workers or settings.MESSAGE_CONCURRENCY_PER_WORKER
-        self.executor = ThreadPoolExecutor(max_workers=workers)
-        # Lock để bảo vệ channel operations (Pika channel KHÔNG thread-safe)
-        self._channel_lock = Lock()
         self._connect()
     
     def _connect(self):
@@ -130,9 +114,7 @@ class RabbitMQConsumer:
                     port=RabbitMQConfig.get_port(),
                     credentials=credentials,
                     connection_attempts=3,
-                    retry_delay=2,
-                    heartbeat=600,  # Heartbeat every 10 minutes
-                    blocked_connection_timeout=300  # Timeout if connection blocked
+                    retry_delay=2
                 )
             )
             
@@ -164,15 +146,13 @@ class RabbitMQConsumer:
                     durable=True
                 )
             
-            # Set QoS: Process multiple messages concurrently
-            prefetch_count = RabbitMQConfig.MESSAGE_CONCURRENCY_PER_WORKER
-            self.channel.basic_qos(prefetch_count=prefetch_count)
+            # Set QoS: Process 1 message at a time
+            self.channel.basic_qos(prefetch_count=1)
             
             logger.info(
                 worker_connected(
                     f"Connected to RabbitMQ as consumer at "
-                    f"{RabbitMQConfig.get_host()}:{RabbitMQConfig.get_port()} "
-                    f"(prefetch_count={prefetch_count}, max_workers={self.executor._max_workers})"
+                    f"{RabbitMQConfig.get_host()}:{RabbitMQConfig.get_port()}"
                 )
             )
         
@@ -187,84 +167,6 @@ class RabbitMQConsumer:
         """
         Callback function when receiving message from queue.
         
-        NOTE: Method này chỉ submit task vào thread pool và return ngay.
-        Logic xử lý thực sự nằm trong _process_message() để xử lý song song.
-        
-        Args:
-            ch: Channel
-            method: Delivery method
-            properties: Message properties
-            body: Message body (JSON string)
-        """
-        # Submit vào thread pool để xử lý song song
-        # Không chờ kết quả, return ngay → callback tiếp theo có thể chạy
-        self.executor.submit(
-            self._process_message,
-            ch, method, properties, body
-        )
-        # Return ngay lập tức → RabbitMQ có thể gửi message tiếp theo
-    
-    def _safe_ack(self, ch, method):
-        """
-        Safely acknowledge message using the original channel from callback.
-        
-        NOTE: delivery_tag chỉ hợp lệ với channel gốc (ch), không thể dùng channel mới.
-        Nếu channel bị đóng, message sẽ được requeue tự động.
-        
-        Args:
-            ch: Channel từ callback (original channel)
-            method: Delivery method
-        """
-        try:
-            # Kiểm tra channel gốc có còn valid không
-            if not ch or ch.is_closed:
-                logger.warning(
-                    f"⚠️ Original channel is closed, cannot ACK. Message will be requeued. "
-                    f"delivery_tag={method.delivery_tag}"
-                )
-                return False
-            
-            # ACK với lock protection (dùng channel gốc)
-            with self._channel_lock:
-                if not ch.is_closed:
-                    ch.basic_ack(delivery_tag=method.delivery_tag)
-                    return True
-                else:
-                    logger.warning(
-                        f"⚠️ Channel closed during ACK, message will be requeued. "
-                        f"delivery_tag={method.delivery_tag}"
-                    )
-                    return False
-                    
-        except (pika.exceptions.StreamLostError,
-                pika.exceptions.ConnectionClosed,
-                pika.exceptions.ChannelClosed) as e:
-            logger.warning(
-                f"⚠️ Cannot ACK message (channel closed): {str(e)}. "
-                f"Message will be requeued. delivery_tag={method.delivery_tag}"
-            )
-            return False
-        except AttributeError as e:
-            logger.warning(
-                f"⚠️ Channel attribute error during ACK: {str(e)}. "
-                f"Message will be requeued. delivery_tag={method.delivery_tag}"
-            )
-            return False
-        except Exception as e:
-            logger.error(
-                f"❌ Unexpected error during ACK: {str(e)}. "
-                f"delivery_tag={method.delivery_tag}",
-                exc_info=True
-            )
-            return False
-    
-    def _process_message(self, ch, method, properties, body):
-        """
-        Xử lý message thực sự (chạy trong thread riêng).
-        
-        Logic này giống hệt code cũ trong callback(), chỉ tách ra method riêng
-        để có thể chạy song song trong thread pool.
-        
         Args:
             ch: Channel
             method: Delivery method
@@ -272,8 +174,7 @@ class RabbitMQConsumer:
             body: Message body (JSON string)
         """
         conversation_id = None
-        db = None  # Tạo session MỚI cho mỗi thread (QUAN TRỌNG!)
-        message_acked = False
+        db = None  # FIX: Khai báo db ở ngoài để đảm bảo có thể close trong finally
         
         try:
             # Parse message
@@ -282,7 +183,7 @@ class RabbitMQConsumer:
             
             logger.info(message_received(conversation_id))
             
-            # Tạo session MỚI cho mỗi thread để tránh transaction bị "nhiễm" lỗi
+            # FIX: Tạo session MỚI cho mỗi message để tránh transaction bị "nhiễm" lỗi
             db = SessionLocal()
             
             repo = ConversationEventRepository(db)
@@ -293,8 +194,7 @@ class RabbitMQConsumer:
                     f"{error('❌ Conversation not found in DB')} | "
                     f"{key_value('conversation_id', conversation_id)}"
                 )
-                # Safe ACK
-                message_acked = self._safe_ack(ch, method)
+                ch.basic_ack(delivery_tag=method.delivery_tag)
                 return
             
             # Setup services
@@ -326,8 +226,8 @@ class RabbitMQConsumer:
                     f"{key_value('conversation_id', conversation_id)}"
                 )
             
-            # Acknowledge message (safe with retry)
-            message_acked = self._safe_ack(ch, method)
+            # Acknowledge message
+            ch.basic_ack(delivery_tag=method.delivery_tag)
         
         except json.JSONDecodeError as e:
             logger.error(
@@ -335,8 +235,8 @@ class RabbitMQConsumer:
                 f"{key_value('error', str(e))}",
                 exc_info=True
             )
-            # Acknowledge message to remove from queue (invalid format, safe)
-            message_acked = self._safe_ack(ch, method)
+            # Acknowledge message to remove from queue (invalid format)
+            ch.basic_ack(delivery_tag=method.delivery_tag)
         
         except Exception as e:
             error_msg = str(e)
@@ -345,43 +245,21 @@ class RabbitMQConsumer:
                 exc_info=True
             )
             
-            # Rollback transaction nếu có lỗi
+            # FIX: Rollback transaction nếu có lỗi
             if db:
                 try:
                     db.rollback()
                 except Exception as rollback_error:
                     logger.warning(f"⚠️ Error during rollback: {str(rollback_error)}")
             
-            # Nack message (requeue for retry, safe) - dùng channel gốc
-            if not message_acked:
-                try:
-                    # Dùng channel gốc từ callback
-                    if ch and not ch.is_closed:
-                        with self._channel_lock:
-                            ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
-                    else:
-                        logger.warning(
-                            f"⚠️ Cannot NACK: channel is closed. "
-                            f"Message will be requeued automatically. "
-                            f"delivery_tag={method.delivery_tag}"
-                        )
-                except (pika.exceptions.StreamLostError,
-                        pika.exceptions.ConnectionClosed,
-                        pika.exceptions.ChannelClosed) as nack_error:
-                    logger.warning(
-                        f"⚠️ Cannot NACK message (channel closed): {str(nack_error)}. "
-                        f"Message will be requeued automatically. "
-                        f"delivery_tag={method.delivery_tag}"
-                    )
-                except Exception as nack_error:
-                    logger.error(
-                        f"❌ Failed to nack message: {str(nack_error)}. "
-                        f"delivery_tag={method.delivery_tag}",
-                        exc_info=True
-                    )
+            # Nack message (requeue for retry)
+            try:
+                ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
+            except Exception as nack_error:
+                logger.error(f"❌ Failed to nack message: {str(nack_error)}")
         
         finally:
-            # LUÔN close session để giải phóng connection
+            # FIX: LUÔN close session để giải phóng connection
             if db:
                 try:
                     db.close()
@@ -389,7 +267,7 @@ class RabbitMQConsumer:
                     logger.warning(f"⚠️ Error closing DB session: {str(close_error)}")
     
     def start_consuming(self):
-        """Start consuming messages from queue with connection health monitoring."""
+        """Start consuming messages from queue."""
         try:
             self.channel.basic_consume(
                 queue=RabbitMQConfig.QUEUE_NAME,
@@ -401,98 +279,30 @@ class RabbitMQConsumer:
             logger.info(f"{info('📋')} {queue_info(RabbitMQConfig.QUEUE_NAME, 'listening')}")
             logger.info(f"{info('💡')} Press CTRL+C to stop")
             
-            # Use process_data_events with timeout instead of start_consuming()
-            # This allows us to check connection health periodically
-            while True:
-                try:
-                    # Check connection health before processing
-                    if not self.connection or self.connection.is_closed:
-                        logger.warning("⚠️ Connection closed, reconnecting...")
-                        self._connect()
-                        # Re-register consumer after reconnect
-                        self.channel.basic_consume(
-                            queue=RabbitMQConfig.QUEUE_NAME,
-                            on_message_callback=self.callback,
-                            auto_ack=False
-                        )
-                        continue
-                    
-                    if not self.channel or self.channel.is_closed:
-                        logger.warning("⚠️ Channel closed, recreating...")
-                        if self.connection and not self.connection.is_closed:
-                            self.channel = self.connection.channel()
-                            self.channel.basic_qos(prefetch_count=RabbitMQConfig.MESSAGE_CONCURRENCY_PER_WORKER)
-                            self.channel.basic_consume(
-                                queue=RabbitMQConfig.QUEUE_NAME,
-                                on_message_callback=self.callback,
-                                auto_ack=False
-                            )
-                        else:
-                            self._connect()
-                            self.channel.basic_consume(
-                                queue=RabbitMQConfig.QUEUE_NAME,
-                                on_message_callback=self.callback,
-                                auto_ack=False
-                            )
-                        continue
-                    
-                    # Process data events with timeout (non-blocking check)
-                    # This allows us to periodically check connection health
-                    self.connection.process_data_events(time_limit=1.0)
-                    
-                except (pika.exceptions.StreamLostError,
-                        pika.exceptions.ConnectionClosed,
-                        pika.exceptions.ChannelClosed) as e:
-                    logger.warning(
-                        f"⚠️ Connection error during processing: {str(e)}. Reconnecting..."
-                    )
-                    try:
-                        self._connect()
-                        # Re-register consumer after reconnect
-                        self.channel.basic_consume(
-                            queue=RabbitMQConfig.QUEUE_NAME,
-                            on_message_callback=self.callback,
-                            auto_ack=False
-                        )
-                    except Exception as reconnect_error:
-                        logger.error(
-                            worker_error(f"Reconnection failed: {str(reconnect_error)}"),
-                            exc_info=True
-                        )
-                        # Wait before retry
-                        time.sleep(5)
-                        continue
+            self.channel.start_consuming()
         
         except KeyboardInterrupt:
             logger.info(consumer_stopping())
             if self.channel:
-                try:
-                    self.channel.stop_consuming()
-                except:
-                    pass
+                self.channel.stop_consuming()
             if self.connection and not self.connection.is_closed:
-                try:
-                    self.connection.close()
-                except:
-                    pass
+                self.connection.close()
             logger.info(consumer_stopped())
         
         except Exception as e:
             logger.error(
-                worker_error(f"Fatal error in consumer: {str(e)}"),
+                worker_error(f"Error in consumer: {str(e)}"),
                 exc_info=True
             )
             raise
     
     def close(self):
-        """Close connection and shutdown thread pool."""
+        """Close connection."""
         try:
             if self.channel:
                 self.channel.stop_consuming()
             if self.connection and not self.connection.is_closed:
                 self.connection.close()
-            # Shutdown thread pool (wait up to 30 seconds for tasks to complete)
-            self.executor.shutdown(wait=True, timeout=30)
             logger.info(connection_closed())
         except Exception as e:
             logger.warning(
@@ -501,54 +311,18 @@ class RabbitMQConsumer:
 
 
 def start_consumer():
-    """Entry point to start consumer with auto-restart on connection errors."""
-    max_restart_attempts = 5
-    restart_delay = 5  # seconds
-    
-    for attempt in range(max_restart_attempts):
-        consumer = None
-        try:
-            consumer = RabbitMQConsumer()
-            consumer.start_consuming()
-        except (pika.exceptions.StreamLostError,
-                pika.exceptions.ConnectionClosed,
-                pika.exceptions.ChannelClosed) as e:
-            logger.error(
-                worker_error(f"Connection lost (attempt {attempt + 1}/{max_restart_attempts}): {str(e)}"),
-                exc_info=True
-            )
-            if consumer:
-                try:
-                    consumer.close()
-                except:
-                    pass
-            
-            if attempt < max_restart_attempts - 1:
-                logger.info(f"🔄 Restarting consumer in {restart_delay} seconds...")
-                time.sleep(restart_delay)
-                continue
-            else:
-                logger.error("❌ Max restart attempts reached, giving up")
-                raise
-        except KeyboardInterrupt:
-            logger.info("🛑 Consumer stopped by user")
-            if consumer:
-                try:
-                    consumer.close()
-                except:
-                    pass
-            break
-        except Exception as e:
-            logger.error(
-                worker_error(f"Consumer failed: {str(e)}"),
-                exc_info=True
-            )
-            if consumer:
-                try:
-                    consumer.close()
-                except:
-                    pass
-            raise
+    """Entry point to start consumer."""
+    consumer = RabbitMQConsumer()
+    try:
+        consumer.start_consuming()
+    except Exception as e:
+        logger.error(
+            worker_error(f"Consumer failed: {str(e)}"),
+            exc_info=True
+        )
+        raise
+    finally:
+        consumer.close()
 
 
 if __name__ == "__main__":
