@@ -41,6 +41,7 @@ class ConversationEvent(Base):
     bot_type = Column(String(50), nullable=False)
     bot_id = Column(String(255), nullable=False)
     bot_name = Column(String(255), nullable=False)
+    agent_tag = Column(String(255), nullable=True)  # ADDED: Agent tag for topic mapping (replaces bot_id for topic lookup)
     start_time = Column(DateTime(timezone=True), nullable=False)
     end_time = Column(DateTime(timezone=True), nullable=False)
     duration_seconds = Column(

@@ -19,6 +19,7 @@ class ConversationEventCreateRequest(BaseModel):
     bot_type: str = Field(..., max_length=50, description="Bot type that handled the session (accepts any string value)")
     bot_id: str = Field(..., max_length=255, description="Bot identifier")
     bot_name: str = Field(..., max_length=255, description="Human readable bot name")
+    agent_tag: Optional[str] = Field(None, max_length=255, description="Agent tag for topic mapping (used instead of bot_id for topic lookup)")
     start_time: datetime = Field(..., description="Conversation start timestamp")
     end_time: datetime = Field(..., description="Conversation end timestamp")
     conversation_log: List[Dict[str, Any]] = Field(
@@ -78,6 +79,7 @@ class ConversationEventData(BaseModel):
     bot_type: str
     bot_id: str
     bot_name: str
+    agent_tag: Optional[str] = None
     start_time: datetime
     end_time: datetime
     duration_seconds: int

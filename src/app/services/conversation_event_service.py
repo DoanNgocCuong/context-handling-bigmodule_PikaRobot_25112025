@@ -217,6 +217,7 @@ class ConversationEventService:
             "bot_type": event.bot_type,
             "bot_id": event.bot_id,
             "bot_name": event.bot_name,
+            "agent_tag": event.agent_tag if hasattr(event, 'agent_tag') else None,  # ADDED: agent_tag for topic mapping
             "start_time": event.start_time,
             "end_time": event.end_time,
             "duration_seconds": event.duration_seconds,

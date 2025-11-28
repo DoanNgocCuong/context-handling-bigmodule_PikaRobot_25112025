@@ -60,72 +60,87 @@ class ConversationEventProcessingService:
             score_change = calc_result["friendship_score_change"]
             
             # Try to update topic_metrics first (it also updates friendship_score)
-            bot_id = event.bot_id
+            # Use agent_tag ONLY (no fallback to bot_id)
+            agent_tag = event.agent_tag if hasattr(event, 'agent_tag') else None
+            bot_id = event.bot_id  # Keep bot_id for logging and agents_used tracking
             
-            # Get user's friendship_level first to query topic_id from DB
-            # get_status() will auto-create record if user doesn't exist
-            # If it fails, we'll use default level and apply_score_change will create it
-            try:
-                user_status = self.status_update_service.get_status(event.user_id)
-                friendship_level = user_status.get("friendship_level", "PHASE1_STRANGER")
-            except Exception as e:
-                logger.warning(
-                    f"⚠️  Failed to get/create friendship status for user {event.user_id}: {e}. "
-                    f"Using default level, will create record in apply_score_change"
-                )
-                # Use default level - apply_score_change will create the record
-                friendship_level = "PHASE1_STRANGER"
-            
-            # Get topic_id from DB (agenda_agent_prompting table)
-            topic_id = get_topic_id_from_agent_id(
-                bot_id=bot_id,
-                friendship_level=friendship_level,
-                db=self.db
-            )
-            logger.info(
-                f"🔍 Got topic_id from agent_id: bot_id='{bot_id}', "
-                f"friendship_level='{friendship_level}' -> topic_id='{topic_id}'"
-            )
             status = None
             
-            if topic_id:
-                # Calculate turns from conversation log
-                conversation_data = self.score_service.conversation_fetch_service.fetch_by_id(
-                    event.conversation_id
-                )
-                conversation_log = conversation_data.get("conversation_log", []) if conversation_data else []
-                # Use same logic as score calculation: count complete turns (pika + user pairs)
-                turns_change = self._count_complete_turns(conversation_log)
-                
+            # Only query topic_id if agent_tag is provided
+            if agent_tag:
+                # Get user's friendship_level first to query topic_id from DB
+                # get_status() will auto-create record if user doesn't exist
+                # If it fails, we'll use default level and apply_score_change will create it
                 try:
-                    self.status_update_service.update_topic_metrics(
-                        user_id=event.user_id,
-                        topic_id=topic_id,
-                        score_change=score_change,
-                        bot_id=bot_id,
-                        turns_change=turns_change
-                    )
-                    # Get updated status to get friendship_level
-                    status = self.status_update_service.get_status(event.user_id)
-                    logger.info(
-                        f"Updated topic_metrics for user_id={event.user_id}, "
-                        f"topic_id={topic_id}, score_change={score_change}, turns={turns_change}"
-                    )
+                    user_status = self.status_update_service.get_status(event.user_id)
+                    friendship_level = user_status.get("friendship_level", "PHASE1_STRANGER")
                 except Exception as e:
                     logger.warning(
-                        f"Failed to update topic_metrics for user_id={event.user_id}, "
-                        f"topic_id={topic_id}: {e}, falling back to apply_score_change"
+                        f"⚠️  Failed to get/create friendship status for user {event.user_id}: {e}. "
+                        f"Using default level, will create record in apply_score_change"
                     )
-                    # Fallback to apply_score_change if update_topic_metrics fails
+                    # Use default level - apply_score_change will create the record
+                    friendship_level = "PHASE1_STRANGER"
+                
+                # Get topic_id from DB (agenda_agent_prompting table) using agent_tag
+                topic_id = get_topic_id_from_agent_id(
+                    bot_id=agent_tag,  # Use agent_tag to query topic_id
+                    friendship_level=friendship_level,
+                    db=self.db
+                )
+                logger.info(
+                    f"🔍 Got topic_id from agent_id: agent_tag='{agent_tag}', "
+                    f"friendship_level='{friendship_level}' -> topic_id='{topic_id}'"
+                )
+                
+                if topic_id:
+                    # Calculate turns from conversation log
+                    conversation_data = self.score_service.conversation_fetch_service.fetch_by_id(
+                        event.conversation_id
+                    )
+                    conversation_log = conversation_data.get("conversation_log", []) if conversation_data else []
+                    # Use same logic as score calculation: count complete turns (pika + user pairs)
+                    turns_change = self._count_complete_turns(conversation_log)
+                    
+                    try:
+                        self.status_update_service.update_topic_metrics(
+                            user_id=event.user_id,
+                            topic_id=topic_id,
+                            score_change=score_change,
+                            bot_id=bot_id,
+                            turns_change=turns_change
+                        )
+                        # Get updated status to get friendship_level
+                        status = self.status_update_service.get_status(event.user_id)
+                        logger.info(
+                            f"Updated topic_metrics for user_id={event.user_id}, "
+                            f"topic_id={topic_id}, score_change={score_change}, turns={turns_change}"
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to update topic_metrics for user_id={event.user_id}, "
+                            f"topic_id={topic_id}: {e}, falling back to apply_score_change"
+                        )
+                        # Fallback to apply_score_change if update_topic_metrics fails
+                        status = self.status_update_service.apply_score_change(
+                            user_id=event.user_id,
+                            score_change=score_change,
+                        )
+                else:
+                    # No topic_id found for agent_tag, just update friendship score
+                    logger.warning(
+                        f"Could not extract topic_id from agent_tag={agent_tag} for user_id={event.user_id}, "
+                        f"using apply_score_change only"
+                    )
                     status = self.status_update_service.apply_score_change(
                         user_id=event.user_id,
                         score_change=score_change,
                     )
             else:
-                # No topic_id, just update friendship score
-                logger.warning(
-                    f"Could not extract topic_id from bot_id={bot_id} for user_id={event.user_id}, "
-                    f"using apply_score_change only"
+                # No agent_tag provided, skip topic_metrics update, only update friendship score
+                logger.info(
+                    f"⏭️  agent_tag not provided for user_id={event.user_id}, "
+                    f"skipping topic_metrics update, using apply_score_change only"
                 )
                 status = self.status_update_service.apply_score_change(
                     user_id=event.user_id,
@@ -136,9 +151,9 @@ class ConversationEventProcessingService:
             if status is None:
                 logger.warning(
                     f"Status is None after processing, applying score change as fallback"
-                )
-                status = self.status_update_service.apply_score_change(
-                    user_id=event.user_id,
+            )
+            status = self.status_update_service.apply_score_change(
+                user_id=event.user_id,
                     score_change=score_change,
                 )
 
@@ -219,62 +234,77 @@ class ConversationEventProcessingService:
                 score_change = calc_result["friendship_score_change"]
                 
                 # Try to update topic_metrics first (it also updates friendship_score)
-                bot_id = event.bot_id
+                # Use agent_tag ONLY (no fallback to bot_id)
+                agent_tag = event.agent_tag if hasattr(event, 'agent_tag') else None
+                bot_id = event.bot_id  # Keep bot_id for logging and agents_used tracking
                 
-                # Get user's friendship_level first to query topic_id from DB
-                user_status = self.status_update_service.get_status(event.user_id)
-                friendship_level = user_status.get("friendship_level", "PHASE1_STRANGER")
-                
-                # Get topic_id from DB (agenda_agent_prompting table)
-                topic_id = get_topic_id_from_agent_id(
-                    bot_id=bot_id,
-                    friendship_level=friendship_level,
-                    db=self.db
-                )
-                logger.info(
-                    f"🔍 Got topic_id from agent_id: bot_id='{bot_id}', "
-                    f"friendship_level='{friendship_level}' -> topic_id='{topic_id}'"
-                )
                 status = None
                 
-                if topic_id:
-                    # Calculate turns from conversation log
-                    conversation_data = self.score_service.conversation_fetch_service.fetch_by_id(
-                        event.conversation_id
-                    )
-                    conversation_log = conversation_data.get("conversation_log", []) if conversation_data else []
-                    # Use same logic as score calculation: count complete turns (pika + user pairs)
-                    turns_change = self._count_complete_turns(conversation_log)
+                # Only query topic_id if agent_tag is provided
+                if agent_tag:
+                    # Get user's friendship_level first to query topic_id from DB
+                    user_status = self.status_update_service.get_status(event.user_id)
+                    friendship_level = user_status.get("friendship_level", "PHASE1_STRANGER")
                     
-                    try:
-                        self.status_update_service.update_topic_metrics(
-                            user_id=event.user_id,
-                            topic_id=topic_id,
-                            score_change=score_change,
-                            bot_id=bot_id,
-                            turns_change=turns_change
+                    # Get topic_id from DB (agenda_agent_prompting table) using agent_tag
+                    topic_id = get_topic_id_from_agent_id(
+                        bot_id=agent_tag,  # Use agent_tag to query topic_id
+                        friendship_level=friendship_level,
+                        db=self.db
+                    )
+                    logger.info(
+                        f"🔍 Got topic_id from agent_id: agent_tag='{agent_tag}', "
+                        f"friendship_level='{friendship_level}' -> topic_id='{topic_id}'"
+                    )
+                    
+                    if topic_id:
+                        # Calculate turns from conversation log
+                        conversation_data = self.score_service.conversation_fetch_service.fetch_by_id(
+                            event.conversation_id
                         )
-                        # Get updated status to get friendship_level
-                        status = self.status_update_service.get_status(event.user_id)
-                        logger.info(
-                            f"Updated topic_metrics for user_id={event.user_id}, "
-                            f"topic_id={topic_id}, score_change={score_change}, turns={turns_change}"
-                        )
-                    except Exception as e:
+                        conversation_log = conversation_data.get("conversation_log", []) if conversation_data else []
+                        # Use same logic as score calculation: count complete turns (pika + user pairs)
+                        turns_change = self._count_complete_turns(conversation_log)
+                        
+                        try:
+                            self.status_update_service.update_topic_metrics(
+                                user_id=event.user_id,
+                                topic_id=topic_id,
+                                score_change=score_change,
+                                bot_id=bot_id,
+                                turns_change=turns_change
+                            )
+                            # Get updated status to get friendship_level
+                            status = self.status_update_service.get_status(event.user_id)
+                            logger.info(
+                                f"Updated topic_metrics for user_id={event.user_id}, "
+                                f"topic_id={topic_id}, score_change={score_change}, turns={turns_change}"
+                            )
+                        except Exception as e:
+                            logger.warning(
+                                f"Failed to update topic_metrics for user_id={event.user_id}, "
+                                f"topic_id={topic_id}: {e}, falling back to apply_score_change"
+                            )
+                            # Fallback to apply_score_change if update_topic_metrics fails
+                            status = self.status_update_service.apply_score_change(
+                                user_id=event.user_id,
+                                score_change=score_change,
+                            )
+                    else:
+                        # No topic_id found for agent_tag, just update friendship score
                         logger.warning(
-                            f"Failed to update topic_metrics for user_id={event.user_id}, "
-                            f"topic_id={topic_id}: {e}, falling back to apply_score_change"
+                            f"Could not extract topic_id from agent_tag={agent_tag} for user_id={event.user_id}, "
+                            f"using apply_score_change only"
                         )
-                        # Fallback to apply_score_change if update_topic_metrics fails
                         status = self.status_update_service.apply_score_change(
                             user_id=event.user_id,
                             score_change=score_change,
                         )
                 else:
-                    # No topic_id, just update friendship score
-                    logger.warning(
-                        f"Could not extract topic_id from bot_id={bot_id} for user_id={event.user_id}, "
-                        f"using apply_score_change only"
+                    # No agent_tag provided, skip topic_metrics update, only update friendship score
+                    logger.info(
+                        f"⏭️  agent_tag not provided for user_id={event.user_id}, "
+                        f"skipping topic_metrics update, using apply_score_change only"
                 )
                 status = self.status_update_service.apply_score_change(
                     user_id=event.user_id,
