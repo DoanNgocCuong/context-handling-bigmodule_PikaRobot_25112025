@@ -244,6 +244,8 @@ class ConversationDataFetchService:
             "user_id": getattr(conversation, "user_id", None),
             "agent_id": getattr(conversation, "agent_id", None),
             "agent_type": getattr(conversation, "agent_type", None),
+            "bot_type": getattr(conversation, "bot_type", None),  # ADDED: bot_type from model
+            "bot_id": getattr(conversation, "bot_id", None),  # ADDED: bot_id from model
             "start_time": getattr(conversation, "start_time", None),
             "end_time": getattr(conversation, "end_time", None),
             "duration_seconds": getattr(conversation, "duration_seconds", None),

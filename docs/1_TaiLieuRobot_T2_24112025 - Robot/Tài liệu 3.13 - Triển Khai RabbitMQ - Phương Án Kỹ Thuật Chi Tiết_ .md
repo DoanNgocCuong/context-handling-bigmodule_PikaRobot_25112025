@@ -1,9 +1,10 @@
 # Phương Án Kỹ Thuật Chi Tiết: Triển Khai RabbitMQ
+
 ## Dựa Trên Kiến Trúc Code Hiện Tại
 
-**Phiên bản:** 3.1 (Realistic)  
-**Ngày:** 27/11/2025  
-**Dựa trên:** Kiến trúc code hiện tại + RabbitMQ integration  
+**Phiên bản:** 3.1 (Realistic)
+**Ngày:** 27/11/2025
+**Dựa trên:** Kiến trúc code hiện tại + RabbitMQ integration
 **Trạng thái:** Sẵn sàng triển khai
 
 ---
@@ -41,6 +42,7 @@ Sang:
 **File:** `src/app/api/v1/endpoints/endpoint_conversation_events.py`
 
 **Hiện Tại:**
+
 ```python
 @router.post("/conversations/end", status_code=202)
 async def conversation_end(
@@ -56,6 +58,7 @@ async def conversation_end(
 ```
 
 **Cập Nhật:**
+
 ```python
 from app.background.rabbitmq_publisher import publish_conversation_event
 
@@ -73,10 +76,10 @@ async def conversation_end(
     try:
         # STEP 1: Validate request
         # (existing code)
-        
+      
         # STEP 2: Create event (lưu vào DB, status=PENDING)
         event = service.create_event_without_processing(request)
-        
+      
         # STEP 3: Publish to RabbitMQ queue
         await publish_conversation_event(
             conversation_id=event.conversation_id,
@@ -84,7 +87,7 @@ async def conversation_end(
             bot_id=event.bot_id,
             conversation_log=event.conversation_log
         )
-        
+      
         # STEP 4: Return 202 Accepted (ngay, không đợi)
         return {
             "status": "accepted",
@@ -92,7 +95,7 @@ async def conversation_end(
             "conversation_id": event.conversation_id,
             "event_id": event.id
         }
-    
+  
     except Exception as e:
         logger.error(f"Error in conversation_end: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -105,6 +108,7 @@ async def conversation_end(
 **File:** `src/app/services/conversation_event_service.py`
 
 **Hiện Tại:**
+
 ```python
 class ConversationEventService:
     def create_event(self, request):
@@ -112,14 +116,15 @@ class ConversationEventService:
         # 2. Transform logs
         # 3. Save to DB
         event = self.repository.create(...)
-        
+      
         # 4. Process immediately ← REMOVE THIS
         processor.process_single_event(event.id)
-        
+      
         return event
 ```
 
 **Cập Nhật:**
+
 ```python
 class ConversationEventService:
     def create_event_without_processing(self, request):
@@ -129,10 +134,10 @@ class ConversationEventService:
         """
         # 1. Validate request
         self._validate_request(request)
-        
+      
         # 2. Transform conversation_logs
         transformed_logs = self._transform_conversation_logs(request.conversation_logs)
-        
+      
         # 3. Save to DB (status=PENDING)
         event = self.repository.create(
             conversation_id=request.conversation_id,
@@ -145,9 +150,9 @@ class ConversationEventService:
             status="PENDING",
             next_attempt_at=datetime.utcnow() + timedelta(hours=6)
         )
-        
+      
         logger.info(f"Created conversation event: {event.conversation_id}")
-        
+      
         return event
 ```
 
@@ -179,7 +184,7 @@ class RabbitMQPublisher:
         self.connection = None
         self.channel = None
         self._connect()
-    
+  
     def _connect(self):
         """Kết nối đến RabbitMQ"""
         try:
@@ -187,7 +192,7 @@ class RabbitMQPublisher:
                 RabbitMQConfig.USERNAME,
                 RabbitMQConfig.PASSWORD
             )
-            
+          
             self.connection = pika.BlockingConnection(
                 pika.ConnectionParameters(
                     host=RabbitMQConfig.HOST,
@@ -197,9 +202,9 @@ class RabbitMQPublisher:
                     retry_delay=2
                 )
             )
-            
+          
             self.channel = self.connection.channel()
-            
+          
             # Declare queue (durable)
             self.channel.queue_declare(
                 queue=RabbitMQConfig.QUEUE_NAME,
@@ -209,13 +214,13 @@ class RabbitMQPublisher:
                     'x-max-length': 100000  # Max 100k messages
                 }
             )
-            
+          
             logger.info("Connected to RabbitMQ")
-        
+      
         except Exception as e:
             logger.error(f"Failed to connect to RabbitMQ: {str(e)}")
             raise
-    
+  
     def publish(self, message: dict):
         """Publish message to queue"""
         try:
@@ -229,13 +234,13 @@ class RabbitMQPublisher:
                     timestamp=int(datetime.utcnow().timestamp())
                 )
             )
-            
+          
             logger.info(f"Published message: {message.get('conversation_id')}")
-        
+      
         except Exception as e:
             logger.error(f"Failed to publish message: {str(e)}")
             raise
-    
+  
     def close(self):
         """Close connection"""
         if self.connection and not self.connection.is_closed:
@@ -258,7 +263,7 @@ async def publish_conversation_event(
 ):
     """Publish conversation event to queue"""
     publisher = get_publisher()
-    
+  
     message = {
         "conversation_id": conversation_id,
         "user_id": user_id,
@@ -266,7 +271,7 @@ async def publish_conversation_event(
         "conversation_log": conversation_log,
         "enqueued_at": datetime.utcnow().isoformat()
     }
-    
+  
     publisher.publish(message)
 ```
 
@@ -293,12 +298,12 @@ class RabbitMQConsumer:
         self.channel = None
         self.processing_service = None
         self._connect()
-    
+  
     def _connect(self):
         """Kết nối đến RabbitMQ"""
         try:
             credentials = pika.PlainCredentials("guest", "guest")
-            
+          
             self.connection = pika.BlockingConnection(
                 pika.ConnectionParameters(
                     host="rabbitmq",
@@ -308,22 +313,22 @@ class RabbitMQConsumer:
                     retry_delay=2
                 )
             )
-            
+          
             self.channel = self.connection.channel()
             self.channel.queue_declare(
                 queue="conversation_events_processing",
                 durable=True
             )
-            
+          
             # Set QoS: Process 1 message at a time
             self.channel.basic_qos(prefetch_count=1)
-            
+          
             logger.info("Connected to RabbitMQ as consumer")
-        
+      
         except Exception as e:
             logger.error(f"Failed to connect to RabbitMQ: {str(e)}")
             raise
-    
+  
     def callback(self, ch, method, properties, body):
         """
         Callback function khi nhận message từ queue.
@@ -332,39 +337,39 @@ class RabbitMQConsumer:
             # Parse message
             message = json.loads(body)
             conversation_id = message.get("conversation_id")
-            
+          
             logger.info(f"Processing conversation: {conversation_id}")
-            
+          
             # STEP 4.1: Lấy conversation event từ DB
             db = SessionLocal()
             repo = ConversationEventRepository(db)
             event = repo.get_by_conversation_id(conversation_id)
-            
+          
             if not event:
                 logger.error(f"Conversation not found: {conversation_id}")
                 ch.basic_ack(delivery_tag=method.delivery_tag)
                 return
-            
+          
             # STEP 4.2: Xử lý event
             processor = ConversationEventProcessingService(
                 conversation_repo=repo,
                 friendship_repo=...,  # Inject dependencies
                 ...
             )
-            
+          
             result = processor.process_single_event(event.id)
-            
+          
             logger.info(f"Successfully processed: {conversation_id}")
-            
+          
             # STEP 4.3: Acknowledge message
             ch.basic_ack(delivery_tag=method.delivery_tag)
-        
+      
         except Exception as e:
             logger.error(f"Error processing message: {str(e)}")
-            
+          
             # Nack message (requeue for retry)
             ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
-    
+  
     def start_consuming(self):
         """Bắt đầu consume messages"""
         try:
@@ -372,15 +377,15 @@ class RabbitMQConsumer:
                 queue="conversation_events_processing",
                 on_message_callback=self.callback
             )
-            
+          
             logger.info("Starting to consume messages...")
             self.channel.start_consuming()
-        
+      
         except KeyboardInterrupt:
             self.channel.stop_consuming()
             self.connection.close()
             logger.info("Consumer stopped")
-        
+      
         except Exception as e:
             logger.error(f"Error in consumer: {str(e)}")
             raise
@@ -540,7 +545,7 @@ volumes:
           └─ Mark as PROCESSED
 ```
 
-**Latency:** < 100ms (BE không đợi)  
+**Latency:** < 100ms (BE không đợi)
 **Processing:** 5-7 giây (ở background)
 
 ---
@@ -732,10 +737,12 @@ docker-compose logs -f worker
 ### Issue 1: Worker không consume messages
 
 **Symptoms:**
+
 - Messages stay in queue
 - Worker logs show no activity
 
 **Solutions:**
+
 - Check RabbitMQ connection: `docker-compose logs rabbitmq`
 - Check worker logs: `docker-compose logs worker`
 - Verify queue name matches
@@ -744,10 +751,12 @@ docker-compose logs -f worker
 ### Issue 2: Message processing fails
 
 **Symptoms:**
+
 - Worker logs show errors
 - Event status stays PROCESSING
 
 **Solutions:**
+
 - Check database connection
 - Check service dependencies injection
 - Check conversation_log format
@@ -756,10 +765,12 @@ docker-compose logs -f worker
 ### Issue 3: RabbitMQ connection refused
 
 **Symptoms:**
+
 - "Connection refused" error
 - Worker can't connect
 
 **Solutions:**
+
 - Check RabbitMQ is running: `docker-compose ps`
 - Check health: `docker-compose logs rabbitmq`
 - Wait for RabbitMQ to be ready (healthcheck)
@@ -771,22 +782,24 @@ docker-compose logs -f worker
 
 ### Thay Đổi Chính
 
-| Thành Phần | Trước | Sau |
-| :--- | :--- | :--- |
-| **API Response** | Xử lý ngay, chậm | 202 Accepted, nhanh |
-| **Processing** | Synchronous | Asynchronous (queue) |
-| **Scalability** | Limited | High |
-| **Latency** | 5-10s | < 100ms (API) |
-| **Reliability** | Không có retry | Có retry + DLQ |
+| Thành Phần           | Trước             | Sau                  |
+| :--------------------- | :------------------ | :------------------- |
+| **API Response** | Xử lý ngay, chậm | 202 Accepted, nhanh  |
+| **Processing**   | Synchronous         | Asynchronous (queue) |
+| **Scalability**  | Limited             | High                 |
+| **Latency**      | 5-10s               | < 100ms (API)        |
+| **Reliability**  | Không có retry    | Có retry + DLQ      |
 
 ### Files Cần Thêm/Sửa
 
 **Thêm:**
+
 - `src/app/background/rabbitmq_publisher.py`
 - `src/app/background/rabbitmq_consumer.py`
 - `src/worker.py`
 
 **Sửa:**
+
 - `src/app/api/v1/endpoints/endpoint_conversation_events.py`
 - `src/app/services/conversation_event_service.py`
 - `docker-compose.yml`
@@ -795,3 +808,80 @@ docker-compose logs -f worker
 ---
 
 **Phương án kỹ thuật chi tiết sẵn sàng triển khai!** 🚀
+
+
+
+---
+
+
+
+Tôi sẽ đọc tài liệu triển khai RabbitMQ để trả lời câu hỏi của bạn.## Trả lời câu hỏi của bạn
+
+**Có, khi chạy localhost bạn CẦN chạy riêng worker!**
+
+Theo kiến trúc RabbitMQ trong tài liệu, có  **2 process riêng biệt** :
+
+| Process                 | Lệnh chạy                                                       | Vai trò                                                   |
+| ----------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------- |
+| **API (FastAPI)** | `uvicorn app.main_app:app --reload --host 0.0.0.0 --port 30020` | Nhận request → Lưu DB → Publish to queue → Return 202 |
+| **Worker**        | `python src/worker.py`                                          | Consume từ queue → Xử lý background → Update DB       |
+
+### Cách chạy localhost:
+
+**Terminal 1 - API:**
+
+```bash
+uvicorn app.main_app:app --reload --host 0.0.0.0 --port 30020
+```
+
+**Terminal 2 - Worker:**
+
+```bash
+python src/worker.py
+```
+
+**Terminal 3 - RabbitMQ (nếu chưa có):**
+
+```bash
+docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+```
+
+### Nếu dùng Docker Compose thì đơn giản hơn:
+
+```bash
+docker-compose up -d
+```
+
+Docker Compose sẽ tự động chạy cả 2 services (`app` + `worker`) như định nghĩa trong file `docker-compose.yml`.
+
+### Lưu ý khi chạy localhost:
+
+1. **RabbitMQ host** cần đổi từ `"rabbitmq"` (Docker service name) thành `"localhost"` trong config
+2. **Database connection** cũng cần đổi tương tự
+3. Worker cần chạy độc lập vì nó là **blocking consumer** - nó chờ message từ queue liên tục
+
+Nếu không chạy worker, messages sẽ đọng trong queue và không được xử lý!self**.**db**.**query**(**ConversationEvent**)**.get**(**conversation_id**)**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        RabbitMQ Queue                           │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐               │
+│  │Msg 1   │ │ Msg 2   │ │ Msg 3   │ │ Msg 4   │  ...          │
+│  └─────────┘ └─────────┘ └─────────┘ └─────────┘               │
+└─────────────────────────┬───────────────────────────────────────┘
+                          │
+                          │ Khi có message mới
+                          ▼
+              ┌───────────────────────┐
+              │   Consumer (Worker)   │
+              │                       │
+              │  callback(message) ◄──┼── RabbitMQ tự động gọi
+              │       │               │
+              │       ▼               │
+              │  Xử lý message        │
+              │  - Parse JSON         │
+              │  - Query DB           │
+              │  - Tính score         │
+              │  - Update DB          │
+              └───────────────────────┘
+```

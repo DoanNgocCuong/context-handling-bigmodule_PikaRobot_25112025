@@ -147,6 +147,21 @@ class FriendshipScoreCalculationService:
             metadata["conversation_id"] = conversation_id
             if "user_id" not in metadata:
                 metadata["user_id"] = conversation_data.get("user_id")
+            # Add bot_type to metadata for Memory API skip logic
+            bot_type = conversation_data.get("bot_type")
+            if bot_type:
+                metadata["bot_type"] = bot_type
+                logger.info(
+                    f"🔍 bot_type extracted from conversation_data | "
+                    f"bot_type={bot_type} | "
+                    f"conversation_id={conversation_id}"
+                )
+            else:
+                logger.warning(
+                    f"⚠️  bot_type not found in conversation_data | "
+                    f"conversation_id={conversation_id} | "
+                    f"available_keys={list(conversation_data.keys())}"
+                )
             
             # Step 3: Calculate score change (this will update metadata with LLM results)
             score_change, updated_metadata = self.calculate_friendship_score_change(
@@ -229,10 +244,12 @@ class FriendshipScoreCalculationService:
                 # Get conversation_id and user_id from metadata if available (for tracking)
                 conversation_id = metadata.get("conversation_id")
                 user_id = metadata.get("user_id")
+                bot_type = metadata.get("bot_type")  # ADDED: Get bot_type for Memory API skip logic
                 llm_analysis = analyze_conversation_with_llm(
                     conversation_log=conversation_log,
                     conversation_id=conversation_id,
-                    user_id=user_id
+                    user_id=user_id,
+                    bot_type=bot_type  # ADDED: Pass bot_type to skip Memory API if needed
                 )
                 # Mark as LLM analyzed to avoid re-running
                 llm_analysis["_llm_analyzed"] = True

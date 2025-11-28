@@ -565,6 +565,7 @@ def analyze_conversation_with_llm(
     conversation_log: List[Dict[str, Any]],
     conversation_id: Optional[str] = None,
     user_id: Optional[str] = None,
+    bot_type: Optional[str] = None,  # ADDED: bot_type to skip Memory API for NEXT_LESSON
     llm_client: Optional[LLMAnalysisClient] = None
 ) -> Dict[str, Any]:
     """
@@ -579,6 +580,7 @@ def analyze_conversation_with_llm(
         conversation_log: List of conversation messages
         conversation_id: Optional conversation ID for tracking
         user_id: User ID for Memory API call
+        bot_type: Optional bot_type to skip Memory API if bot_type == "NEXT_LESSON"
         llm_client: Optional LLM client instance (creates new one if not provided)
         
     Returns:
@@ -639,12 +641,52 @@ def analyze_conversation_with_llm(
             tasks.append(("session_emotion", lambda: "neutral"))
         
         # Task 3: Memory API - new_memories_count
-        if user_id:
+        # Skip Memory API if bot_type == "NEXT_LESSON" (normalize: strip whitespace, case-insensitive)
+        if bot_type:
+            # Normalize bot_type: strip whitespace and convert to uppercase for comparison
+            normalized_bot_type = bot_type.strip().upper().replace(" ", "_")
+            logger.debug(
+                f"🔍 Checking bot_type for Memory API skip | "
+                f"original={bot_type} | "
+                f"normalized={normalized_bot_type}"
+            )
+            if normalized_bot_type == "NEXT_LESSON":
+                logger.info(
+                    f"⏭️  Skipping Memory API extraction | "
+                    f"bot_type={bot_type} (normalized={normalized_bot_type}) | "
+                    f"reason=NEXT_LESSON conversations do not extract memories"
+                )
+                tasks.append(("new_memories_count", lambda: 0))
+                # Continue to next condition check (don't add Memory API task)
+            elif user_id:
+                # Normal bot_type, proceed with Memory API if enabled
+                if settings.MEMORY_API_ENABLED and settings.MEMORY_API_URL:
+                    logger.info(
+                        f"🔍 Memory API task added | "
+                        f"conversation_id={conversation_id} | user_id={user_id} | "
+                        f"bot_type={bot_type} | url={settings.MEMORY_API_URL}"
+                    )
+                    tasks.append((
+                        "new_memories_count",
+                        lambda: extract_memories_from_api(conversation_log, user_id, conversation_id)
+                    ))
+                else:
+                    logger.warning(
+                        f"⚠️  Memory API not enabled or URL not set, skipping | "
+                        f"MEMORY_API_ENABLED={settings.MEMORY_API_ENABLED} | "
+                        f"MEMORY_API_URL={'set' if settings.MEMORY_API_URL else 'not set'}"
+                    )
+                    tasks.append(("new_memories_count", lambda: 0))
+            else:
+                logger.warning("⚠️  user_id not provided, skipping Memory API extraction")
+                tasks.append(("new_memories_count", lambda: 0))
+        elif user_id:
+            # bot_type is None, but user_id exists - proceed with Memory API if enabled
             if settings.MEMORY_API_ENABLED and settings.MEMORY_API_URL:
                 logger.info(
                     f"🔍 Memory API task added | "
                     f"conversation_id={conversation_id} | user_id={user_id} | "
-                    f"url={settings.MEMORY_API_URL}"
+                    f"bot_type=None | url={settings.MEMORY_API_URL}"
                 )
                 tasks.append((
                     "new_memories_count",
