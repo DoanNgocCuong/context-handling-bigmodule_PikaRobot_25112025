@@ -6,7 +6,6 @@ services:
       context: .
       dockerfile: ./Dockerfile.worker
     image: v1-context-handling-worker:latest
-    container_name: context-handling-worker
     restart: unless-stopped
     env_file:
       - .env
@@ -23,5 +22,5 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: 10.6.0.0/24
-          gateway: 10.6.0.1
+        - subnet: 10.7.0.0/24
+          gateway: 10.7.0.1
